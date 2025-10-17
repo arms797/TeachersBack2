@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using TeachersBack2.Data;
 using TeachersBack2.DTOs;
-using TeachersBack2.Services;
 using TeachersBack2.Helpers;
+using TeachersBack2.Services;
 
 namespace TeachersBack2.Controllers;
 
@@ -134,4 +135,21 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "خطا در بروزرسانی تماس.", detail = ex.Message });
         }
     }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetCurrentUser()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var username = User.Identity.Name;
+        var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+        return Ok(new
+        {
+            id = userId,
+            username = username,
+            roles = roles
+        });
+    }
+
 }

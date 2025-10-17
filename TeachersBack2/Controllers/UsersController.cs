@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeachersBack2.Data;
+using TeachersBack2.DTOs;
 using TeachersBack2.Models;
 
 namespace TeachersBack2.Controllers;
@@ -68,16 +69,33 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] User dto)
+    public async Task<IActionResult> Create([FromBody] UserCreateDto dto)
     {
-        dto.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.PasswordHash);
-        _db.Users.Add(dto);
+        string pass;
+        if (dto.Password != null)
+            pass = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+        else
+            pass = BCrypt.Net.BCrypt.HashPassword(dto.NationalCode != null ? dto.NationalCode : "Spnu123");
+        User u = new User
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            NationalCode=dto.NationalCode,
+            Mobile = dto.Mobile,
+            Email = dto.Email,
+            CenterCode = dto.CenterCode,
+            Username = dto.Username,
+            IsActive = dto.IsActive,
+            PasswordHash=pass
+        };
+        
+        _db.Users.Add(u);
         await _db.SaveChangesAsync();
-        return Ok(dto);
+        return Ok(u);
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Edit(int id, [FromBody] User dto)
+    public async Task<IActionResult> Edit(int id, [FromBody] UserEditDto dto)
     {
         var user = await _db.Users.Include(u => u.UserRoles).FirstOrDefaultAsync(u => u.Id == id);
         if (user == null) return NotFound();
@@ -100,10 +118,44 @@ public class UsersController : ControllerBase
         var user = await _db.Users.FindAsync(id);
         if (user == null) return NotFound();
 
-        var newPass = "Temp12345";
+        var newPass = user.NationalCode != null ? user.NationalCode : "Spnu123";
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPass);
         await _db.SaveChangesAsync();
 
         return Ok(new { message = "رمز ریست شد", tempPassword = newPass });
+    }
+    [HttpPost("{id:int}/roles/{roleId:int}/")]
+    public async Task<IActionResult> AddUserRole(int id,int roleId)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) return NotFound();
+        var role= await _db.Roles.FindAsync(roleId);
+        if (role == null) return NotFound();
+        var ur=await _db.UserRoles.Where(u=>u.RoleId==roleId && u.UserId==id).FirstOrDefaultAsync();
+        if (ur != null) return NotFound();
+        var userRole = new UserRole
+        {
+            UserId = user.Id,
+            RoleId = role.Id
+        };
+        _db.UserRoles.Add(userRole);
+        await _db.SaveChangesAsync();
+        return Ok(userRole);
+    }
+    [HttpDelete("{id:int}/roles/{roleId:int}/")]
+    public async Task<IActionResult> DeleteUserRole(int id, int roleId)
+    {
+        var userRole = await _db.UserRoles.Where(u=>u.UserId==id &&  u.RoleId==roleId).FirstOrDefaultAsync();
+        if (userRole == null) return NotFound();
+        _db.UserRoles.Remove(userRole);
+        await _db.SaveChangesAsync();
+        return Ok();
+    }
+    [HttpGet("{id:int}/roles")]
+    public async Task<IActionResult> GetUserRoles(int id)
+    {
+        var userRole=await _db.UserRoles.Where(u=>u.UserId==id).ToListAsync();
+        if (userRole == null) return NotFound();
+        return Ok(userRole);
     }
 }

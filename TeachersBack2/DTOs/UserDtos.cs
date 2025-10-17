@@ -21,8 +21,8 @@ public class UserEditDto
     public string? NationalCode { get; set; }
     public string? Mobile { get; set; }
     public string? Email { get; set; }
-    public int? CenterCode { get; set; }
-    public bool? IsActive { get; set; }
+    public int CenterCode { get; set; }
+    public bool IsActive { get; set; }
     public List<int>? RoleIds { get; set; } // اختصاص یا حذف نقش‌ها
 }
 
