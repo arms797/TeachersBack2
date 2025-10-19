@@ -4,7 +4,9 @@
     {
         public int Id { get; set; } // آیدی اصلی
         public string Code { get; set; } // کد استاد
-        public string FullName { get; set; } // نام
+        public string Fname {  get; set; }//نام
+        public string Lname {  get; set; }//نام خانوادگی
+        public string FullName { get; set; } // نام کامل
         public string Email { get; set; }
         public string Mobile { get; set; }
 
@@ -21,6 +23,8 @@
         public string Degree { get; set; } // مدرک تحصیلی
         public string Suggestion { get; set; } // پیشنهاد
         public string Term {  get; set; }//ترم تحصیلی
+        public bool Projector {  get; set; }// ویدئو پروژکتور
+        public bool Whiteboard2 {  get; set; } // دو وایت برده
     }
 
 }

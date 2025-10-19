@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TeachersBack2.Data;
 
@@ -10,9 +11,11 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251019125859_EditTeachersName")]
+    partial class EditTeachersName
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,9 +147,6 @@ namespace TeachersBack2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("Projector")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Suggestion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -154,9 +154,6 @@ namespace TeachersBack2.Migrations
                     b.Property<string>("Term")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Whiteboard2")
-                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -302,10 +299,6 @@ namespace TeachersBack2.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TeacherCode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Term")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
