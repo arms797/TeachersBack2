@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OfficeOpenXml;
+using ClosedXML.Excel;
+using System.ComponentModel;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
 
-[Authorize(Roles = "admin")]
+
+[Authorize(Roles = "admin,centerAdmin")]
 [ApiController]
 [Route("api/teachers")]
 public class TeacherController : ControllerBase
@@ -28,45 +30,85 @@ public class TeacherController : ControllerBase
 
             using var stream = new MemoryStream();
             await file.CopyToAsync(stream);
-            using var package = new ExcelPackage(stream);
-            var worksheet = package.Workbook.Worksheets[0];
-            int rowCount = worksheet.Dimension.Rows;
 
-            for (int row = 2; row <= rowCount; row++)
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1); // اولین شیت
+
+            int addedCount = 0;
+            int duplicateCount = 0;
+            int errorCount = 0;
+
+            foreach (var row in worksheet.RowsUsed().Skip(1)) // رد کردن هدر
             {
+                var code = row.Cell(1).GetString().Trim();
+                var fname = row.Cell(2).GetString().Trim();
+                var lname = row.Cell(3).GetString().Trim();
+                var fullName = row.Cell(4).GetString().Trim();
+
+                // شرط اعتبارسنجی: اگر هیچ‌کدام از این چهار فیلد وجود نداشتند → خطا
+                bool isEmpty = string.IsNullOrWhiteSpace(code)
+                            && string.IsNullOrWhiteSpace(fname)
+                            && string.IsNullOrWhiteSpace(lname)
+                            && string.IsNullOrWhiteSpace(fullName);
+
+                if (isEmpty)
+                {
+                    errorCount++;
+                    continue;
+                }
+
+                // بررسی تکراری بودن بر اساس کد استادی (اگر وجود داشته باشد)
+                if (!string.IsNullOrWhiteSpace(code))
+                {
+                    bool exists = await _context.Teachers.AnyAsync(t => t.Code == code);
+                    if (exists)
+                    {
+                        duplicateCount++;
+                        continue;
+                    }
+                }
+
                 var teacher = new Teacher
                 {
-                    Code = worksheet.Cells[row, 1].Text,
-                    Fname = worksheet.Cells[row, 2].Text,
-                    Lname = worksheet.Cells[row, 3].Text,
-                    FullName = worksheet.Cells[row, 4].Text,
-                    Email = worksheet.Cells[row, 5].Text,
-                    Mobile = worksheet.Cells[row, 6].Text,
-                    FieldOfStudy = worksheet.Cells[row, 7].Text,
-                    Center = worksheet.Cells[row, 8].Text,
-                    CooperationType = worksheet.Cells[row, 9].Text,
-                    AcademicRank = worksheet.Cells[row, 10].Text,
-                    ExecutivePosition = worksheet.Cells[row, 11].Text,
-                    IsNeighborTeaching = worksheet.Cells[row, 12].Text.ToLower() == "false",
-                    NeighborCenters = worksheet.Cells[row, 13].Text,
-                    Degree = worksheet.Cells[row, 14].Text,
-                    Suggestion = worksheet.Cells[row, 15].Text,
-                    Term = worksheet.Cells[row, 16].Text,
-                    Projector = worksheet.Cells[row, 17].Text.ToLower() == "false",
-                    Whiteboard2 = worksheet.Cells[row, 18].Text.ToLower() == "false"
+                    Code = code,
+                    Fname = fname,
+                    Lname = lname,
+                    FullName = fullName,
+                    Email = row.Cell(5).GetString().Trim(),
+                    Mobile = row.Cell(6).GetString().Trim(),
+                    FieldOfStudy = row.Cell(7).GetString().Trim(),
+                    Center = row.Cell(8).GetString().Trim(),
+                    CooperationType = row.Cell(9).GetString().Trim(),
+                    AcademicRank = row.Cell(10).GetString().Trim(),
+                    ExecutivePosition = row.Cell(11).GetString().Trim(),
+                    IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "false",
+                    NeighborCenters = row.Cell(13).GetString().Trim(),
+                    Degree = row.Cell(14).GetString().Trim(),
+                    Suggestion = row.Cell(15).GetString().Trim(),
+                    Term = row.Cell(16).GetString().Trim(),
+                    Projector = row.Cell(17).GetString().ToLower().Trim() == "false",
+                    Whiteboard2 = row.Cell(18).GetString().ToLower().Trim() == "false"
                 };
 
                 _context.Teachers.Add(teacher);
+                addedCount++;
             }
 
             await _context.SaveChangesAsync();
-            return Ok("اطلاعات با موفقیت ثبت شد");
+
+            return Ok(new
+            {
+                addedCount,
+                duplicateCount,
+                errorCount
+            });
         }
         catch (Exception ex)
         {
             return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
         }
     }
+
 
     // 🔍 خواندن استاد بر اساس کد
     [HttpGet("by-code/{code}")]
@@ -84,19 +126,81 @@ public class TeacherController : ControllerBase
     }
 
     // 📄 دریافت همه اساتید
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+     [HttpGet]
+     public async Task<IActionResult> GetAll()
+     {
+         try
+         {
+             var teachers = await _context.Teachers.ToListAsync();
+             return Ok(teachers);
+         }
+         catch (Exception ex)
+         {
+             return StatusCode(500, $"خطا در دریافت لیست: {ex.Message}");
+         }
+     }
+
+    [HttpGet("paged")]
+    public async Task<IActionResult> GetPaged(
+    int page = 1,
+    int pageSize = 30,
+    string search = "",
+    string cooperationType = "",
+    string center = "",
+    string fieldOfStudy = ""
+)
     {
         try
         {
-            var teachers = await _context.Teachers.ToListAsync();
-            return Ok(teachers);
+            var query = _context.Teachers.AsQueryable();
+
+            // جستجوی عمومی بر اساس کد، نام، نام خانوادگی
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                string term = search.Trim();
+                query = query.Where(t =>
+                    (t.Code != null && t.Code.Contains(term)) ||
+                    (t.Fname != null && t.Fname.Contains(term)) ||
+                    (t.Lname != null && t.Lname.Contains(term))
+                );
+            }
+
+            // فیلتر نوع همکاری
+            if (!string.IsNullOrWhiteSpace(cooperationType))
+            {
+                query = query.Where(t => t.CooperationType == cooperationType);
+            }
+
+            // فیلتر مرکز
+            if (!string.IsNullOrWhiteSpace(center))
+            {
+                query = query.Where(t => t.Center != null && t.Center.Contains(center));
+            }
+
+            // فیلتر رشته
+            if (!string.IsNullOrWhiteSpace(fieldOfStudy))
+            {
+                query = query.Where(t => t.FieldOfStudy != null && t.FieldOfStudy.Contains(fieldOfStudy));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(t => t.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new { totalCount, items });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"خطا در دریافت لیست: {ex.Message}");
+            return StatusCode(500, $"خطا در دریافت اطلاعات: {ex.Message}");
         }
     }
+
+
+
 
     // 📄 دریافت استاد با آیدی
     [HttpGet("{id}")]

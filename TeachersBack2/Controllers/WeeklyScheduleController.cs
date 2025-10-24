@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using OfficeOpenXml;
+//using OfficeOpenXml;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
 
@@ -18,7 +18,7 @@ public class WeeklyScheduleController : ControllerBase
     }
 
     // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
-    [HttpPost("upload-excel")]
+   /* [HttpPost("upload-excel")]
     public async Task<IActionResult> UploadExcel(IFormFile file)
     {
         try
@@ -61,6 +61,7 @@ public class WeeklyScheduleController : ControllerBase
             return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
         }
     }
+   */
 
     // 🔍 خواندن برنامه بر اساس کد استاد
     [HttpGet("by-code/{code}")]
