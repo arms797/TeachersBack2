@@ -48,25 +48,31 @@ namespace TeachersBack2.Migrations
                     Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Fname = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Lname = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Mobile = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FieldOfStudy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Center = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CooperationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AcademicRank = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ExecutivePosition = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsNeighborTeaching = table.Column<bool>(type: "bit", nullable: false),
-                    NeighborCenters = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Degree = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Suggestion = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Term = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Projector = table.Column<bool>(type: "bit", nullable: false),
-                    Whiteboard2 = table.Column<bool>(type: "bit", nullable: false)
+                    ExecutivePosition = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Teachers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TermCalenders",
+                columns: table => new
+                {
+                    Term = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Start = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    End = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TermCalenders", x => x.Term);
                 });
 
             migrationBuilder.CreateTable(
@@ -112,6 +118,32 @@ namespace TeachersBack2.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WeeklySchedules", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TeacherTerms",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TeacherId = table.Column<int>(type: "int", nullable: false),
+                    Term = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsNeighborTeaching = table.Column<bool>(type: "bit", nullable: false),
+                    NeighborTeaching = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    NeighborCenters = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Suggestion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Projector = table.Column<bool>(type: "bit", nullable: false),
+                    Whiteboard2 = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TeacherTerms", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TeacherTerms_Teachers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "Teachers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -169,6 +201,11 @@ namespace TeachersBack2.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_TeacherTerms_TeacherId",
+                table: "TeacherTerms",
+                column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",
                 table: "UserRoles",
                 column: "RoleId");
@@ -193,13 +230,19 @@ namespace TeachersBack2.Migrations
                 name: "Centers");
 
             migrationBuilder.DropTable(
-                name: "Teachers");
+                name: "TeacherTerms");
+
+            migrationBuilder.DropTable(
+                name: "TermCalenders");
 
             migrationBuilder.DropTable(
                 name: "UserRoles");
 
             migrationBuilder.DropTable(
                 name: "WeeklySchedules");
+
+            migrationBuilder.DropTable(
+                name: "Teachers");
 
             migrationBuilder.DropTable(
                 name: "Roles");

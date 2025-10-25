@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
+using System.Transactions;
 
 [Authorize(Roles = "admin,centerAdmin")]
 [ApiController]
@@ -19,34 +20,37 @@ public class TeacherController : ControllerBase
 
     // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
     [HttpPost("upload-excel")]
-    public async Task<IActionResult> UploadExcel(IFormFile file)
+public async Task<IActionResult> UploadExcel(IFormFile file)
+{
+    try
     {
-        try
+        if (file == null || file.Length == 0)
+            return BadRequest("فایل معتبر نیست");
+
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+
+        using var workbook = new XLWorkbook(stream);
+        var worksheet = workbook.Worksheet(1);
+
+        int addedCount = 0;
+        int duplicateCount = 0;
+        int errorCount = 0;
+        int skippedTermCount = 0;
+
+        foreach (var row in worksheet.RowsUsed().Skip(1))
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("فایل معتبر نیست");
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
 
-            using var stream = new MemoryStream();
-            await file.CopyToAsync(stream);
-
-            using var workbook = new XLWorkbook(stream);
-            var worksheet = workbook.Worksheet(1);
-
-            int addedCount = 0;
-            int duplicateCount = 0;
-            int errorCount = 0;
-
-            foreach (var row in worksheet.RowsUsed().Skip(1))
+            try
             {
                 var code = row.Cell(1).GetString().Trim();
                 var fname = row.Cell(2).GetString().Trim();
                 var lname = row.Cell(3).GetString().Trim();
-                var fullName = row.Cell(4).GetString().Trim();
 
                 bool isEmpty = string.IsNullOrWhiteSpace(code)
                             && string.IsNullOrWhiteSpace(fname)
-                            && string.IsNullOrWhiteSpace(lname)
-                            && string.IsNullOrWhiteSpace(fullName);
+                            && string.IsNullOrWhiteSpace(lname);
 
                 if (isEmpty)
                 {
@@ -54,50 +58,84 @@ public class TeacherController : ControllerBase
                     continue;
                 }
 
-                if (!string.IsNullOrWhiteSpace(code))
+                var existingTeacher = await _context.Teachers.FirstOrDefaultAsync(t => t.Code == code);
+                int teacherId;
+
+                if (existingTeacher != null)
                 {
-                    bool exists = await _context.Teachers.AnyAsync(t => t.Code == code);
-                    if (exists)
+                    teacherId = existingTeacher.Id;
+                    duplicateCount++;
+                }
+                else
+                {
+                    var teacher = new Teacher
                     {
-                        duplicateCount++;
-                        continue;
-                    }
+                        Code = code,
+                        Fname = fname,
+                        Lname = lname,
+                        Email = row.Cell(4).GetString().Trim(),
+                        Mobile = row.Cell(5).GetString().Trim(),
+                        FieldOfStudy = row.Cell(6).GetString().Trim(),
+                        Center = row.Cell(7).GetString().Trim(),
+                        CooperationType = row.Cell(8).GetString().Trim(),
+                        AcademicRank = row.Cell(9).GetString().Trim(),
+                        ExecutivePosition = row.Cell(10).GetString().Trim()
+                    };
+
+                    _context.Teachers.Add(teacher);
+                    await _context.SaveChangesAsync();
+                    teacherId = teacher.Id;
+                    addedCount++;
                 }
 
-                var teacher = new Teacher
+                var termCode = row.Cell(17).GetString().Trim();
+
+                bool termExists = await _context.TeacherTerms.AnyAsync(tt =>
+                    tt.TeacherId == teacherId && tt.Term == termCode);
+
+                if (termExists)
                 {
-                    Code = code,
-                    Fname = fname,
-                    Lname = lname,
-                    FullName = fullName,
-                    Email = row.Cell(5).GetString().Trim(),
-                    Mobile = row.Cell(6).GetString().Trim(),
-                    FieldOfStudy = row.Cell(7).GetString().Trim(),
-                    Center = row.Cell(8).GetString().Trim(),
-                    CooperationType = row.Cell(9).GetString().Trim(),
-                    AcademicRank = row.Cell(10).GetString().Trim(),
-                    ExecutivePosition = row.Cell(11).GetString().Trim(),
-                    Degree = row.Cell(14).GetString().Trim()
+                    skippedTermCount++;
+                    continue;
+                }
+
+                var teacherTerm = new TeacherTerm
+                {
+                    TeacherId = teacherId,
+                    Term = termCode,
+                    IsNeighborTeaching = row.Cell(11).GetString().ToLower().Trim() == "true",
+                    NeighborTeaching = row.Cell(12).GetString().Trim(),
+                    NeighborCenters = row.Cell(13).GetString().Trim(),
+                    Suggestion = row.Cell(14).GetString().Trim(),
+                    Projector = row.Cell(15).GetString().ToLower().Trim() == "true",
+                    Whiteboard2 = row.Cell(16).GetString().ToLower().Trim() == "true"
                 };
 
-                _context.Teachers.Add(teacher);
-                addedCount++;
+                _context.TeacherTerms.Add(teacherTerm);
+                await _context.SaveChangesAsync();
+
+                scope.Complete();
             }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
+            catch
             {
-                addedCount,
-                duplicateCount,
-                errorCount
-            });
+                errorCount++;
+                // تراکنش لغو می‌شود
+            }
         }
-        catch (Exception ex)
+
+        return Ok(new
         {
-            return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
-        }
+            addedCount,
+            duplicateCount,
+            skippedTermCount,
+            errorCount
+        });
     }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
+    }
+}
 
     // 🔍 خواندن استاد بر اساس کد
     [HttpGet("by-code/{code}")]
@@ -196,19 +234,27 @@ public class TeacherController : ControllerBase
 
     // ➕ افزودن استاد جدید
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Teacher model)
+    public async Task<IActionResult> Create([FromBody] TeacherCreateDto dto)
     {
-        try
+        var teacher = new Teacher
         {
-            _context.Teachers.Add(model);
-            await _context.SaveChangesAsync();
-            return Ok(model);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در افزودن استاد: {ex.Message}");
-        }
+            Code = dto.Code,
+            Fname = dto.Fname,
+            Lname = dto.Lname,
+            Email = dto.Email,
+            Mobile = dto.Mobile,
+            FieldOfStudy = dto.FieldOfStudy,
+            Center = dto.Center,
+            CooperationType = dto.CooperationType,
+            AcademicRank = dto.AcademicRank,
+            ExecutivePosition = dto.ExecutivePosition
+        };
+
+        _context.Teachers.Add(teacher);
+        await _context.SaveChangesAsync();
+        return Ok(teacher);
     }
+
 
     // ✏️ ویرایش استاد
     [HttpPut("{id}")]
@@ -222,7 +268,7 @@ public class TeacherController : ControllerBase
             teacher.Code = model.Code;
             teacher.Fname = model.Fname;
             teacher.Lname = model.Lname;
-            teacher.FullName = model.FullName;
+            //teacher.FullName = model.FullName;
             teacher.Email = model.Email;
             teacher.Mobile = model.Mobile;
             teacher.FieldOfStudy = model.FieldOfStudy;
@@ -230,7 +276,7 @@ public class TeacherController : ControllerBase
             teacher.CooperationType = model.CooperationType;
             teacher.AcademicRank = model.AcademicRank;
             teacher.ExecutivePosition = model.ExecutivePosition;
-            teacher.Degree = model.Degree;
+            //teacher.Degree = model.Degree;
 
             await _context.SaveChangesAsync();
             return Ok(teacher);

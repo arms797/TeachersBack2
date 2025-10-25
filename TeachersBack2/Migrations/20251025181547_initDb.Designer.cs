@@ -11,7 +11,7 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251020083106_initDb")]
+    [Migration("20251025181547_initDb")]
     partial class initDb
     {
         /// <inheritdoc />
@@ -108,10 +108,6 @@ namespace TeachersBack2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Degree")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -128,13 +124,6 @@ namespace TeachersBack2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsNeighborTeaching")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Lname")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -143,7 +132,27 @@ namespace TeachersBack2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.HasKey("Id");
+
+                    b.ToTable("Teachers");
+                });
+
+            modelBuilder.Entity("TeachersBack2.Models.TeacherTerm", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsNeighborTeaching")
+                        .HasColumnType("bit");
+
                     b.Property<string>("NeighborCenters")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NeighborTeaching")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -154,6 +163,9 @@ namespace TeachersBack2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("TeacherId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Term")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -163,7 +175,31 @@ namespace TeachersBack2.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Teachers");
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("TeacherTerms");
+                });
+
+            modelBuilder.Entity("TeachersBack2.Models.TermCalender", b =>
+                {
+                    b.Property<string>("Term")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("End")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Start")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Term");
+
+                    b.ToTable("TermCalenders");
                 });
 
             modelBuilder.Entity("TeachersBack2.Models.User", b =>
@@ -317,6 +353,17 @@ namespace TeachersBack2.Migrations
                     b.ToTable("WeeklySchedules");
                 });
 
+            modelBuilder.Entity("TeachersBack2.Models.TeacherTerm", b =>
+                {
+                    b.HasOne("TeachersBack2.Models.Teacher", "Teacher")
+                        .WithMany("TeacherTerms")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Teacher");
+                });
+
             modelBuilder.Entity("TeachersBack2.Models.UserRole", b =>
                 {
                     b.HasOne("TeachersBack2.Models.Role", "Role")
@@ -339,6 +386,11 @@ namespace TeachersBack2.Migrations
             modelBuilder.Entity("TeachersBack2.Models.Role", b =>
                 {
                     b.Navigation("UserRoles");
+                });
+
+            modelBuilder.Entity("TeachersBack2.Models.Teacher", b =>
+                {
+                    b.Navigation("TeacherTerms");
                 });
 
             modelBuilder.Entity("TeachersBack2.Models.User", b =>
