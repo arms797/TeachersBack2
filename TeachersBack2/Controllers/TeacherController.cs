@@ -2,10 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ClosedXML.Excel;
-using System.ComponentModel;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
-
 
 [Authorize(Roles = "admin,centerAdmin")]
 [ApiController]
@@ -32,20 +30,19 @@ public class TeacherController : ControllerBase
             await file.CopyToAsync(stream);
 
             using var workbook = new XLWorkbook(stream);
-            var worksheet = workbook.Worksheet(1); // اولین شیت
+            var worksheet = workbook.Worksheet(1);
 
             int addedCount = 0;
             int duplicateCount = 0;
             int errorCount = 0;
 
-            foreach (var row in worksheet.RowsUsed().Skip(1)) // رد کردن هدر
+            foreach (var row in worksheet.RowsUsed().Skip(1))
             {
                 var code = row.Cell(1).GetString().Trim();
                 var fname = row.Cell(2).GetString().Trim();
                 var lname = row.Cell(3).GetString().Trim();
                 var fullName = row.Cell(4).GetString().Trim();
 
-                // شرط اعتبارسنجی: اگر هیچ‌کدام از این چهار فیلد وجود نداشتند → خطا
                 bool isEmpty = string.IsNullOrWhiteSpace(code)
                             && string.IsNullOrWhiteSpace(fname)
                             && string.IsNullOrWhiteSpace(lname)
@@ -57,7 +54,6 @@ public class TeacherController : ControllerBase
                     continue;
                 }
 
-                // بررسی تکراری بودن بر اساس کد استادی (اگر وجود داشته باشد)
                 if (!string.IsNullOrWhiteSpace(code))
                 {
                     bool exists = await _context.Teachers.AnyAsync(t => t.Code == code);
@@ -81,13 +77,7 @@ public class TeacherController : ControllerBase
                     CooperationType = row.Cell(9).GetString().Trim(),
                     AcademicRank = row.Cell(10).GetString().Trim(),
                     ExecutivePosition = row.Cell(11).GetString().Trim(),
-                    IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "false",
-                    NeighborCenters = row.Cell(13).GetString().Trim(),
-                    Degree = row.Cell(14).GetString().Trim(),
-                    Suggestion = row.Cell(15).GetString().Trim(),
-                    Term = row.Cell(16).GetString().Trim(),
-                    Projector = row.Cell(17).GetString().ToLower().Trim() == "false",
-                    Whiteboard2 = row.Cell(18).GetString().ToLower().Trim() == "false"
+                    Degree = row.Cell(14).GetString().Trim()
                 };
 
                 _context.Teachers.Add(teacher);
@@ -109,7 +99,6 @@ public class TeacherController : ControllerBase
         }
     }
 
-
     // 🔍 خواندن استاد بر اساس کد
     [HttpGet("by-code/{code}")]
     public async Task<IActionResult> GetByCode(string code)
@@ -126,35 +115,35 @@ public class TeacherController : ControllerBase
     }
 
     // 📄 دریافت همه اساتید
-     [HttpGet]
-     public async Task<IActionResult> GetAll()
-     {
-         try
-         {
-             var teachers = await _context.Teachers.ToListAsync();
-             return Ok(teachers);
-         }
-         catch (Exception ex)
-         {
-             return StatusCode(500, $"خطا در دریافت لیست: {ex.Message}");
-         }
-     }
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        try
+        {
+            var teachers = await _context.Teachers.ToListAsync();
+            return Ok(teachers);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"خطا در دریافت لیست: {ex.Message}");
+        }
+    }
 
+    // 📄 دریافت صفحه‌بندی‌شده
     [HttpGet("paged")]
     public async Task<IActionResult> GetPaged(
-    int page = 1,
-    int pageSize = 30,
-    string search = "",
-    string cooperationType = "",
-    string center = "",
-    string fieldOfStudy = ""
-)
+        int page = 1,
+        int pageSize = 30,
+        string search = "",
+        string cooperationType = "",
+        string center = "",
+        string fieldOfStudy = ""
+    )
     {
         try
         {
             var query = _context.Teachers.AsQueryable();
 
-            // جستجوی عمومی بر اساس کد، نام، نام خانوادگی
             if (!string.IsNullOrWhiteSpace(search))
             {
                 string term = search.Trim();
@@ -165,23 +154,14 @@ public class TeacherController : ControllerBase
                 );
             }
 
-            // فیلتر نوع همکاری
             if (!string.IsNullOrWhiteSpace(cooperationType))
-            {
                 query = query.Where(t => t.CooperationType == cooperationType);
-            }
 
-            // فیلتر مرکز
             if (!string.IsNullOrWhiteSpace(center))
-            {
                 query = query.Where(t => t.Center != null && t.Center.Contains(center));
-            }
 
-            // فیلتر رشته
             if (!string.IsNullOrWhiteSpace(fieldOfStudy))
-            {
                 query = query.Where(t => t.FieldOfStudy != null && t.FieldOfStudy.Contains(fieldOfStudy));
-            }
 
             var totalCount = await query.CountAsync();
 
@@ -198,9 +178,6 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در دریافت اطلاعات: {ex.Message}");
         }
     }
-
-
-
 
     // 📄 دریافت استاد با آیدی
     [HttpGet("{id}")]
@@ -253,13 +230,7 @@ public class TeacherController : ControllerBase
             teacher.CooperationType = model.CooperationType;
             teacher.AcademicRank = model.AcademicRank;
             teacher.ExecutivePosition = model.ExecutivePosition;
-            teacher.IsNeighborTeaching = model.IsNeighborTeaching;
-            teacher.NeighborCenters = model.NeighborCenters;
             teacher.Degree = model.Degree;
-            teacher.Suggestion = model.Suggestion;
-            teacher.Term = model.Term;
-            teacher.Projector = model.Projector;
-            teacher.Whiteboard2 = model.Whiteboard2;
 
             await _context.SaveChangesAsync();
             return Ok(teacher);
@@ -288,8 +259,10 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در حذف استاد: {ex.Message}");
         }
     }
+
+    // 🔍 جستجو بر اساس نام
     [HttpGet("search-by-name/{name}")]
-    public async Task<IActionResult> SearchByName( string name)
+    public async Task<IActionResult> SearchByName(string name)
     {
         try
         {
@@ -307,5 +280,4 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در جستجو: {ex.Message}");
         }
     }
-
 }

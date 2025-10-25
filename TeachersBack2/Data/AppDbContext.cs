@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
     public DbSet<Center> Centers => Set<Center>();
     public DbSet<Teacher> Teachers { get; set; }
     public DbSet<WeeklySchedule> WeeklySchedules { get; set; }
+    public DbSet<TermCalender> TermCalenders { get; set; }
+    public DbSet<TeacherTerm> TeacherTerms { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

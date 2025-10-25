@@ -16,15 +16,9 @@
         public string CooperationType { get; set; } // نوع همکاری: "عضو هیات علمی" یا "مدرس مدعو"
         public string AcademicRank { get; set; } // مرتبه علمی
         public string ExecutivePosition { get; set; } // پست اجرایی
-
-        public bool IsNeighborTeaching { get; set; } // تدریس همجوار
-        public string NeighborCenters { get; set; } // مراکز همجوار
-
         public string Degree { get; set; } // مدرک تحصیلی
-        public string Suggestion { get; set; } // پیشنهاد
-        public string Term {  get; set; }//ترم تحصیلی
-        public bool Projector {  get; set; }// ویدئو پروژکتور
-        public bool Whiteboard2 {  get; set; } // دو وایت برده
+
+        public ICollection<TeacherTerm> Terms { get; set; }
     }
 
 }

@@ -11,8 +11,8 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251019125859_EditTeachersName")]
-    partial class EditTeachersName
+    [Migration("20251020083106_initDb")]
+    partial class initDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -147,6 +147,9 @@ namespace TeachersBack2.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("Projector")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Suggestion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -154,6 +157,9 @@ namespace TeachersBack2.Migrations
                     b.Property<string>("Term")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Whiteboard2")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -299,6 +305,10 @@ namespace TeachersBack2.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TeacherCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Term")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
