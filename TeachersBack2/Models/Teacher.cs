@@ -15,6 +15,8 @@
         public string CooperationType { get; set; } // نوع همکاری: "عضو هیات علمی" یا "مدرس مدعو"
         public string AcademicRank { get; set; } // مرتبه علمی یا مدرک تحصیلی
         public string ExecutivePosition { get; set; } // پست اجرایی
+        public string NationalCode { get; set; }//کد ملی
+        public string PasswordHash {  get; set; }//رمز هش شده
 
         public ICollection<TeacherTerm> TeacherTerms { get; set; }
     }

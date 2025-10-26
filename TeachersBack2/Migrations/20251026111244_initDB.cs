@@ -7,7 +7,7 @@
 namespace TeachersBack2.Migrations
 {
     /// <inheritdoc />
-    public partial class initDb : Migration
+    public partial class initDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -54,7 +54,9 @@ namespace TeachersBack2.Migrations
                     Center = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CooperationType = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AcademicRank = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ExecutivePosition = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ExecutivePosition = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    NationalCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -68,7 +70,8 @@ namespace TeachersBack2.Migrations
                     Term = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Start = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    End = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    End = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Active = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -6,7 +6,7 @@ using TeachersBack2.Data;
 using TeachersBack2.Models;
 using System.Transactions;
 
-[Authorize(Roles = "admin,centerAdmin")]
+
 [ApiController]
 [Route("api/teachers")]
 public class TeacherController : ControllerBase
@@ -19,6 +19,7 @@ public class TeacherController : ControllerBase
     }
 
     // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
+    [Authorize(Roles = "admin")]
     [HttpPost("upload-excel")]
 public async Task<IActionResult> UploadExcel(IFormFile file)
 {
@@ -73,13 +74,14 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
                         Code = code,
                         Fname = fname,
                         Lname = lname,
-                        Email = row.Cell(4).GetString().Trim(),
-                        Mobile = row.Cell(5).GetString().Trim(),
-                        FieldOfStudy = row.Cell(6).GetString().Trim(),
-                        Center = row.Cell(7).GetString().Trim(),
-                        CooperationType = row.Cell(8).GetString().Trim(),
-                        AcademicRank = row.Cell(9).GetString().Trim(),
-                        ExecutivePosition = row.Cell(10).GetString().Trim()
+                        NationalCode = row.Cell(4).GetString().Trim(),
+                        Email = row.Cell(5).GetString().Trim(),
+                        Mobile = row.Cell(6).GetString().Trim(),
+                        FieldOfStudy = row.Cell(7).GetString().Trim(),
+                        Center = row.Cell(8).GetString().Trim(),
+                        CooperationType = row.Cell(9).GetString().Trim(),
+                        AcademicRank = row.Cell(10).GetString().Trim(),
+                        ExecutivePosition = row.Cell(11).GetString().Trim()
                     };
 
                     _context.Teachers.Add(teacher);
@@ -88,7 +90,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
                     addedCount++;
                 }
 
-                var termCode = row.Cell(17).GetString().Trim();
+                var termCode = row.Cell(18).GetString().Trim();
 
                 bool termExists = await _context.TeacherTerms.AnyAsync(tt =>
                     tt.TeacherId == teacherId && tt.Term == termCode);
@@ -103,12 +105,12 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
                 {
                     TeacherId = teacherId,
                     Term = termCode,
-                    IsNeighborTeaching = row.Cell(11).GetString().ToLower().Trim() == "true",
-                    NeighborTeaching = row.Cell(12).GetString().Trim(),
-                    NeighborCenters = row.Cell(13).GetString().Trim(),
-                    Suggestion = row.Cell(14).GetString().Trim(),
-                    Projector = row.Cell(15).GetString().ToLower().Trim() == "true",
-                    Whiteboard2 = row.Cell(16).GetString().ToLower().Trim() == "true"
+                    IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "true",
+                    NeighborTeaching = row.Cell(13).GetString().Trim(),
+                    NeighborCenters = row.Cell(14).GetString().Trim(),
+                    Suggestion = row.Cell(15).GetString().Trim(),
+                    Projector = row.Cell(16).GetString().ToLower().Trim() == "true",
+                    Whiteboard2 = row.Cell(17).GetString().ToLower().Trim() == "true"
                 };
 
                 _context.TeacherTerms.Add(teacherTerm);
