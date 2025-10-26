@@ -1,179 +1,142 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-//using OfficeOpenXml;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
 
-[Authorize(Roles = "admin")]
+namespace TeachersBack2.Controllers;
+
+[Authorize(Roles = "teacher")]
 [ApiController]
-[Route("api/weeklyschedule")]
+[Route("api/weekly-schedule")]
 public class WeeklyScheduleController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly AppDbContext _db;
 
-    public WeeklyScheduleController(AppDbContext context)
+    public WeeklyScheduleController(AppDbContext db)
     {
-        _context = context;
+        _db = db;
     }
 
-    // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
-   /* [HttpPost("upload-excel")]
-    public async Task<IActionResult> UploadExcel(IFormFile file)
+    // 📌 دریافت برنامه هفتگی استاد بر اساس کد و ترم
+    [HttpGet("{teacherCode}/{term}")]
+    
+    public async Task<IActionResult> GetWeeklySchedule(string teacherCode, string term)
     {
         try
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("فایل معتبر نیست");
+            if (string.IsNullOrWhiteSpace(teacherCode) || string.IsNullOrWhiteSpace(term))
+                return BadRequest(new { message = "کد استاد یا ترم معتبر نیست." });
 
-            using var stream = new MemoryStream();
-            await file.CopyToAsync(stream);
-            using var package = new ExcelPackage(stream);
-            var worksheet = package.Workbook.Worksheets[0];
-            int rowCount = worksheet.Dimension.Rows;
-
-            for (int row = 2; row <= rowCount; row++)
-            {
-                var schedule = new WeeklySchedule
-                {
-                    TeacherCode = worksheet.Cells[row, 1].Text,
-                    DayOfWeek = worksheet.Cells[row, 2].Text,
-                    Center = worksheet.Cells[row, 3].Text,
-                    A = worksheet.Cells[row, 4].Text,
-                    B = worksheet.Cells[row, 5].Text,
-                    C = worksheet.Cells[row, 6].Text,
-                    D = worksheet.Cells[row, 7].Text,
-                    E = worksheet.Cells[row, 8].Text,
-                    Description = worksheet.Cells[row, 9].Text,
-                    AlternativeHours = worksheet.Cells[row, 10].Text,
-                    ForbiddenHours = worksheet.Cells[row, 11].Text,
-                    Term = worksheet.Cells[row, 12].Text
-                };
-
-                _context.WeeklySchedules.Add(schedule);
-            }
-
-            await _context.SaveChangesAsync();
-            return Ok("اطلاعات برنامه هفتگی با موفقیت ثبت شد");
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
-        }
-    }
-   */
-
-    // 🔍 خواندن برنامه بر اساس کد استاد
-    [HttpGet("by-code/{code}")]
-    public async Task<IActionResult> GetByTeacherCode(string code)
-    {
-        try
-        {
-            var schedules = await _context.WeeklySchedules
-                .Where(ws => ws.TeacherCode == code)
+            var schedule = await _db.WeeklySchedules
+                .Where(ws => ws.TeacherCode == teacherCode && ws.Term == term)
                 .ToListAsync();
 
-            return Ok(schedules);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در دریافت برنامه: {ex.Message}");
-        }
-    }
-
-    // 📄 دریافت همه برنامه‌ها
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        try
-        {
-            var schedules = await _context.WeeklySchedules.ToListAsync();
-            return Ok(schedules);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در دریافت لیست: {ex.Message}");
-        }
-    }
-
-    // 📄 دریافت برنامه با آیدی
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        try
-        {
-            var schedule = await _context.WeeklySchedules.FindAsync(id);
-            return schedule == null ? NotFound("برنامه یافت نشد") : Ok(schedule);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در دریافت اطلاعات: {ex.Message}");
-        }
-    }
-
-    // ➕ افزودن برنامه جدید
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] WeeklySchedule model)
-    {
-        try
-        {
-            _context.WeeklySchedules.Add(model);
-            await _context.SaveChangesAsync();
-            return Ok(model);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در افزودن برنامه: {ex.Message}");
-        }
-    }
-
-    // ✏️ ویرایش برنامه
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] WeeklySchedule model)
-    {
-        try
-        {
-            var schedule = await _context.WeeklySchedules.FindAsync(id);
-            if (schedule == null) return NotFound("برنامه یافت نشد");
-
-            schedule.TeacherCode = model.TeacherCode;
-            schedule.DayOfWeek = model.DayOfWeek;
-            schedule.Center = model.Center;
-            schedule.A = model.A;
-            schedule.B = model.B;
-            schedule.C = model.C;
-            schedule.D = model.D;
-            schedule.E = model.E;
-            schedule.Description = model.Description;
-            schedule.AlternativeHours = model.AlternativeHours;
-            schedule.ForbiddenHours = model.ForbiddenHours;
-            schedule.Term = model.Term;
-
-            await _context.SaveChangesAsync();
             return Ok(schedule);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"خطا در بروزرسانی برنامه: {ex.Message}");
+            return StatusCode(500, new { message = "خطا در دریافت برنامه هفتگی.", detail = ex.Message });
         }
     }
 
-    // ❌ حذف برنامه
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpPut("weekly-schedule/{id}")]
+    public async Task<IActionResult> UpdateWeeklySchedule(int id, [FromBody] WeeklySchedule updated)
     {
         try
         {
-            var schedule = await _context.WeeklySchedules.FindAsync(id);
-            if (schedule == null) return NotFound("برنامه یافت نشد");
+            var code = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(code))
+                return Unauthorized(new { message = "کد استاد معتبر نیست." });
 
-            _context.WeeklySchedules.Remove(schedule);
-            await _context.SaveChangesAsync();
-            return Ok("برنامه حذف شد");
+            var schedule = await _db.WeeklySchedules
+                .FirstOrDefaultAsync(ws => ws.Id == id && ws.TeacherCode == code);
+
+            if (schedule == null)
+                return NotFound(new { message = "رکورد برنامه هفتگی یافت نشد یا متعلق به شما نیست." });
+
+            // فقط فیلدهای قابل ویرایش
+            schedule.Center = updated.Center;
+            schedule.A = updated.A;
+            schedule.B = updated.B;
+            schedule.C = updated.C;
+            schedule.D = updated.D;
+            schedule.E = updated.E;
+            schedule.Description = updated.Description;
+            schedule.AlternativeHours = updated.AlternativeHours;
+            schedule.ForbiddenHours = updated.ForbiddenHours;
+            schedule.Term = updated.Term;
+
+            await _db.SaveChangesAsync();
+            return Ok(new { message = "برنامه هفتگی با موفقیت ویرایش شد." });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"خطا در حذف برنامه: {ex.Message}");
+            return StatusCode(500, new { message = "خطا در ویرایش برنامه هفتگی.", detail = ex.Message });
         }
     }
+    
+    [HttpPost("weekly-schedule/generate-for-all/{term}")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GenerateWeeklyScheduleForAll(string term)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(term))
+                return BadRequest(new { message = "ترم معتبر ارسال نشده است." });
+
+            var teachers = await _db.Teachers.ToListAsync();
+            var daysOfWeek = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه" };
+
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var teacher in teachers)
+            {
+                try
+                {
+                    foreach (var day in daysOfWeek)
+                    {
+                        var schedule = new WeeklySchedule
+                        {
+                            TeacherCode = teacher.Code,
+                            DayOfWeek = day,
+                            Center = "عدم حضور در مرکز",
+                            A = "عدم حضور در مرکز",
+                            B = "عدم حضور در مرکز",
+                            C = "عدم حضور در مرکز",
+                            D = "عدم حضور در مرکز",
+                            E = "عدم حضور در مرکز",
+                            Description = "",
+                            AlternativeHours = "",
+                            ForbiddenHours = "",
+                            Term = term
+                        };
+
+                        _db.WeeklySchedules.Add(schedule);
+                    }
+
+                    await _db.SaveChangesAsync();
+                    successCount++;
+                }
+                catch
+                {
+                    errorCount++;
+                }
+            }
+
+            return Ok(new
+            {
+                message = "ایجاد برنامه هفتگی اولیه برای همه اساتید انجام شد.",
+                successCount,
+                errorCount
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "خطای کلی در عملیات ایجاد برنامه هفتگی.", detail = ex.Message });
+        }
+    }
+
+
 }

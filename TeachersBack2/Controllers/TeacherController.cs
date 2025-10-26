@@ -19,9 +19,9 @@ public class TeacherController : ControllerBase
     }
 
     // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
-    [Authorize(Roles = "admin")]
     [HttpPost("upload-excel")]
-public async Task<IActionResult> UploadExcel(IFormFile file)
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> UploadExcel(IFormFile file)
 {
     try
     {
@@ -141,6 +141,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // 🔍 خواندن استاد بر اساس کد
     [HttpGet("by-code/{code}")]
+    [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetByCode(string code)
     {
         try
@@ -156,6 +157,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // 📄 دریافت همه اساتید
     [HttpGet]
+    [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetAll()
     {
         try
@@ -171,6 +173,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // 📄 دریافت صفحه‌بندی‌شده
     [HttpGet("paged")]
+    [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetPaged(
         int page = 1,
         int pageSize = 30,
@@ -221,6 +224,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // 📄 دریافت استاد با آیدی
     [HttpGet("{id}")]
+    [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetById(int id)
     {
         try
@@ -236,6 +240,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // ➕ افزودن استاد جدید
     [HttpPost]
+    [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> Create([FromBody] TeacherCreateDto dto)
     {
         var teacher = new Teacher
@@ -260,6 +265,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // ✏️ ویرایش استاد
     [HttpPut("{id}")]
+    [Authorize(Roles = "admin,centerAdmin")]
     public async Task<IActionResult> Update(int id, [FromBody] Teacher model)
     {
         try
@@ -289,8 +295,9 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
         }
     }
 
-    // ❌ حذف استاد
+    // ❌ حذف استاد    
     [HttpDelete("{id}")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> Delete(int id)
     {
         try
@@ -310,6 +317,7 @@ public async Task<IActionResult> UploadExcel(IFormFile file)
 
     // 🔍 جستجو بر اساس نام
     [HttpGet("search-by-name/{name}")]
+    [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> SearchByName(string name)
     {
         try
