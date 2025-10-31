@@ -16,8 +16,7 @@ namespace TeachersBack2.Migrations
                 name: "Centers",
                 columns: table => new
                 {
-                    CenterCode = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CenterCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
@@ -64,6 +63,26 @@ namespace TeachersBack2.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "TeacherTerms",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Code = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Term = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsNeighborTeaching = table.Column<bool>(type: "bit", nullable: false),
+                    NeighborTeaching = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    NeighborCenters = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Suggestion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Projector = table.Column<bool>(type: "bit", nullable: false),
+                    Whiteboard2 = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TeacherTerms", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "TermCalenders",
                 columns: table => new
                 {
@@ -89,7 +108,7 @@ namespace TeachersBack2.Migrations
                     NationalCode = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Mobile = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CenterCode = table.Column<int>(type: "int", nullable: false),
+                    CenterCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Username = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false)
@@ -124,32 +143,6 @@ namespace TeachersBack2.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TeacherTerms",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    TeacherId = table.Column<int>(type: "int", nullable: false),
-                    Term = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsNeighborTeaching = table.Column<bool>(type: "bit", nullable: false),
-                    NeighborTeaching = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    NeighborCenters = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Suggestion = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Projector = table.Column<bool>(type: "bit", nullable: false),
-                    Whiteboard2 = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TeacherTerms", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TeacherTerms_Teachers_TeacherId",
-                        column: x => x.TeacherId,
-                        principalTable: "Teachers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "UserRoles",
                 columns: table => new
                 {
@@ -178,8 +171,8 @@ namespace TeachersBack2.Migrations
                 columns: new[] { "CenterCode", "Title" },
                 values: new object[,]
                 {
-                    { 1, "استان فارس" },
-                    { 6293, "شیراز" }
+                    { "1", "استان فارس" },
+                    { "6293", "شیراز" }
                 });
 
             migrationBuilder.InsertData(
@@ -190,7 +183,7 @@ namespace TeachersBack2.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "CenterCode", "Email", "FirstName", "IsActive", "LastName", "Mobile", "NationalCode", "PasswordHash", "Username" },
-                values: new object[] { 1, 1, "admin@example.com", "ادمین", true, "ادمین", "09120000000", "0000000000", "$2a$12$BhFI37anzgtbV2200UY1DO6VR2WKEOvyuZngKhhMknmIxmND12b5C", "admin" });
+                values: new object[] { 1, "1", "admin@example.com", "ادمین", true, "ادمین", "09120000000", "0000000000", "$2a$12$BhFI37anzgtbV2200UY1DO6VR2WKEOvyuZngKhhMknmIxmND12b5C", "admin" });
 
             migrationBuilder.InsertData(
                 table: "UserRoles",
@@ -202,11 +195,6 @@ namespace TeachersBack2.Migrations
                 table: "Roles",
                 column: "Title",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TeacherTerms_TeacherId",
-                table: "TeacherTerms",
-                column: "TeacherId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRoles_RoleId",
@@ -233,6 +221,9 @@ namespace TeachersBack2.Migrations
                 name: "Centers");
 
             migrationBuilder.DropTable(
+                name: "Teachers");
+
+            migrationBuilder.DropTable(
                 name: "TeacherTerms");
 
             migrationBuilder.DropTable(
@@ -243,9 +234,6 @@ namespace TeachersBack2.Migrations
 
             migrationBuilder.DropTable(
                 name: "WeeklySchedules");
-
-            migrationBuilder.DropTable(
-                name: "Teachers");
 
             migrationBuilder.DropTable(
                 name: "Roles");

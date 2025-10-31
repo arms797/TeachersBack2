@@ -10,4 +10,5 @@
     public string CooperationType { get; set; }
     public string AcademicRank { get; set; }
     public string ExecutivePosition { get; set; }
+    public string NationalCode {  get; set; }
 }

@@ -72,6 +72,7 @@ public class TeacherSelfController : ControllerBase
         }
     }
 
+    /*
     [HttpGet("teacher-terms/{term}")]
     public async Task<IActionResult> GetTeacherTermsByTerm(string term)
     {
@@ -85,8 +86,7 @@ public class TeacherSelfController : ControllerBase
                 return BadRequest(new { message = "ترم معتبر ارسال نشده است." });
 
             var terms = await _db.TeacherTerms
-                .Include(tt => tt.Teacher)
-                .Where(tt => tt.Teacher.Code == code && tt.Term == term)
+                .Where(tt => tt.Code == code && tt.Term == term)
                 .ToListAsync();
 
             return Ok(terms);
@@ -106,9 +106,7 @@ public class TeacherSelfController : ControllerBase
             if (string.IsNullOrWhiteSpace(code))
                 return Unauthorized(new { message = "کد استاد معتبر نیست." });
 
-            var term = await _db.TeacherTerms
-                .Include(t => t.Teacher)
-                .FirstOrDefaultAsync(t => t.Id == id && t.Teacher.Code == code);
+            var term = await _db.TeacherTerms.Where(t => t.Id == id && t.Code == code).FirstOrDefaultAsync();
 
             if (term == null)
                 return NotFound(new { message = "رکورد ترمی مورد نظر یافت نشد یا متعلق به شما نیست." });
@@ -129,6 +127,7 @@ public class TeacherSelfController : ControllerBase
             return StatusCode(500, new { message = "خطا در ویرایش اطلاعات ترمی.", detail = ex.Message });
         }
     }
+    */
 
     [HttpPut("change-password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)

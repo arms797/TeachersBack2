@@ -2,6 +2,6 @@
 
 public class Center
 {
-    public int CenterCode { get; set; } // دستی وارد می‌شود
+    public string CenterCode { get; set; } // دستی وارد می‌شود
     public string Title { get; set; } = default!;
 }

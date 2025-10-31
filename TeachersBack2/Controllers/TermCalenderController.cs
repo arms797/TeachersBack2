@@ -20,11 +20,27 @@ namespace TeachersBack2.Controllers
 
         // GET: api/TermCalender
         [HttpGet]
+        [AllowAnonymous] // اگر بخوای همه دسترسی داشته باشن
         public async Task<IActionResult> GetAll()
         {
             var terms = await _context.TermCalenders.OrderByDescending(t => t.Term).ToListAsync();
             return Ok(terms);
         }
+
+        // GET: api/TermCalender/term
+        /*
+        [HttpGet("term")]
+        [AllowAnonymous] // اگر بخوای همه دسترسی داشته باشن
+        public async Task<IActionResult> GetAllTerm()
+        {
+            var terms = await _context.TermCalenders
+                .OrderByDescending(t => t.Term)
+                .Select(t => t.Term)
+                .ToListAsync();
+
+            return Ok(terms);
+        }
+        */
 
         // GET: api/TermCalender/14031
         [HttpGet("{term}")]
@@ -80,5 +96,27 @@ namespace TeachersBack2.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
+
+        // PUT: api/TermCalender/activate/1403-1
+        [HttpPut("activate/{term}")]
+        public async Task<IActionResult> ActivateTerm(string term)
+        {
+            var targetTerm = await _context.TermCalenders.FindAsync(term);
+            if (targetTerm == null)
+                return NotFound(new { message = "ترم مورد نظر یافت نشد." });
+
+            // غیرفعال کردن همه ترم‌ها
+            var allTerms = await _context.TermCalenders.ToListAsync();
+            foreach (var t in allTerms)
+                t.Active = false;
+
+            // فعال کردن ترم انتخاب‌شده
+            targetTerm.Active = true;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = $"ترم {term} با موفقیت فعال شد." });
+        }
+
+
     }
 }

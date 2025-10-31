@@ -18,7 +18,7 @@
         public string NationalCode { get; set; }//کد ملی
         public string PasswordHash {  get; set; }//رمز هش شده
 
-        public ICollection<TeacherTerm> TeacherTerms { get; set; }
+        //public ICollection<TeacherTerm> TeacherTerms { get; set; }
     }
 
 }

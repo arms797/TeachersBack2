@@ -69,6 +69,8 @@ public class TeacherController : ControllerBase
                 }
                 else
                 {
+                        string p = row.Cell(4).GetString().Trim();
+                        string pass = p != "" ? p : "Spnu123";
                     var teacher = new Teacher
                     {
                         Code = code,
@@ -81,40 +83,43 @@ public class TeacherController : ControllerBase
                         Center = row.Cell(8).GetString().Trim(),
                         CooperationType = row.Cell(9).GetString().Trim(),
                         AcademicRank = row.Cell(10).GetString().Trim(),
-                        ExecutivePosition = row.Cell(11).GetString().Trim()
+                        ExecutivePosition = row.Cell(11).GetString().Trim(),
+                        PasswordHash=BCrypt.Net.BCrypt.HashPassword(pass)
+                        
                     };
 
                     _context.Teachers.Add(teacher);
                     await _context.SaveChangesAsync();
                     teacherId = teacher.Id;
                     addedCount++;
+               
+                    var termCode = row.Cell(18).GetString().Trim();
+                    bool termExists = await _context.TeacherTerms.AnyAsync(tt =>
+                        tt.Code == code && tt.Term == termCode);
+
+                    if (termExists)
+                    {
+                        skippedTermCount++;
+                        continue;
+                    }
+
+                    var teacherTerm = new TeacherTerm
+                    {
+                        Code = code,
+                        Term = termCode,
+                        IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "false",
+                        NeighborTeaching = row.Cell(13).GetString().Trim(),
+                        NeighborCenters = row.Cell(14).GetString().Trim(),
+                        Suggestion = row.Cell(15).GetString().Trim(),
+                        Projector = row.Cell(16).GetString().ToLower().Trim() == "false",
+                        Whiteboard2 = row.Cell(17).GetString().ToLower().Trim() == "false"
+                    };
+
+                    _context.TeacherTerms.Add(teacherTerm);
+                    await _context.SaveChangesAsync();
                 }
 
-                var termCode = row.Cell(18).GetString().Trim();
-
-                bool termExists = await _context.TeacherTerms.AnyAsync(tt =>
-                    tt.TeacherId == teacherId && tt.Term == termCode);
-
-                if (termExists)
-                {
-                    skippedTermCount++;
-                    continue;
-                }
-
-                var teacherTerm = new TeacherTerm
-                {
-                    TeacherId = teacherId,
-                    Term = termCode,
-                    IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "true",
-                    NeighborTeaching = row.Cell(13).GetString().Trim(),
-                    NeighborCenters = row.Cell(14).GetString().Trim(),
-                    Suggestion = row.Cell(15).GetString().Trim(),
-                    Projector = row.Cell(16).GetString().ToLower().Trim() == "true",
-                    Whiteboard2 = row.Cell(17).GetString().ToLower().Trim() == "true"
-                };
-
-                _context.TeacherTerms.Add(teacherTerm);
-                await _context.SaveChangesAsync();
+                
 
                 scope.Complete();
             }
@@ -140,6 +145,7 @@ public class TeacherController : ControllerBase
 }
 
     // 🔍 خواندن استاد بر اساس کد
+    /*
     [HttpGet("by-code/{code}")]
     [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetByCode(string code)
@@ -154,7 +160,7 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در دریافت اطلاعات: {ex.Message}");
         }
     }
-
+    */
     // 📄 دریافت همه اساتید
     [HttpGet]
     [Authorize(Roles = "admin,centerAdmin,programmer")]
@@ -223,6 +229,8 @@ public class TeacherController : ControllerBase
     }
 
     // 📄 دریافت استاد با آیدی
+    /*
+    
     [HttpGet("{id}")]
     [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetById(int id)
@@ -237,12 +245,14 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در دریافت اطلاعات: {ex.Message}");
         }
     }
-
+    */
     // ➕ افزودن استاد جدید
     [HttpPost]
     [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> Create([FromBody] TeacherCreateDto dto)
     {
+
+        string pass = dto.NationalCode!=null ? dto.NationalCode : "Spnu123";
         var teacher = new Teacher
         {
             Code = dto.Code,
@@ -254,7 +264,9 @@ public class TeacherController : ControllerBase
             Center = dto.Center,
             CooperationType = dto.CooperationType,
             AcademicRank = dto.AcademicRank,
-            ExecutivePosition = dto.ExecutivePosition
+            ExecutivePosition = dto.ExecutivePosition,
+            NationalCode=dto.NationalCode,
+            PasswordHash=BCrypt.Net.BCrypt.HashPassword(pass)
         };
 
         _context.Teachers.Add(teacher);
@@ -284,6 +296,7 @@ public class TeacherController : ControllerBase
             teacher.CooperationType = model.CooperationType;
             teacher.AcademicRank = model.AcademicRank;
             teacher.ExecutivePosition = model.ExecutivePosition;
+            teacher.NationalCode = model.NationalCode;
             //teacher.Degree = model.Degree;
 
             await _context.SaveChangesAsync();
@@ -316,6 +329,7 @@ public class TeacherController : ControllerBase
     }
 
     // 🔍 جستجو بر اساس نام
+    /*
     [HttpGet("search-by-name/{name}")]
     [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> SearchByName(string name)
@@ -336,4 +350,5 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در جستجو: {ex.Message}");
         }
     }
+    */
 }

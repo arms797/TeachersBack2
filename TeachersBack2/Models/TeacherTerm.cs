@@ -3,9 +3,7 @@
     public class TeacherTerm
     {
         public int Id { get; set; }
-        public int TeacherId { get; set; }
-        public Teacher Teacher { get; set; }
-
+        public string Code {  get; set; }
         public string Term {  get; set; }//ترم تحصیلی
         public bool IsNeighborTeaching { get; set; } // تدریس همجوار
         public string NeighborTeaching { get;set; }//دلایل تدریس همجوار

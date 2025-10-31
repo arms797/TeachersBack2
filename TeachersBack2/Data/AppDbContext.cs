@@ -49,8 +49,8 @@ public class AppDbContext : DbContext
 
         // Seed data
         var adminRole = new Role { Id = 1, Title = "admin", Description = "ادمین سایت" };
-        var center1 = new Center { CenterCode = 1, Title = "استان فارس" };
-        var center2 = new Center { CenterCode = 6293, Title = "شیراز" };
+        var center1 = new Center { CenterCode ="1", Title = "استان فارس" };
+        var center2 = new Center { CenterCode = "6293", Title = "شیراز" };
 
         var adminUser = new User
         {
@@ -60,7 +60,7 @@ public class AppDbContext : DbContext
             NationalCode = "0000000000",
             Mobile = "09120000000",
             Email = "admin@example.com",
-            CenterCode = 1,
+            CenterCode = "1",
             Username = "admin",
             PasswordHash = "$2a$12$BhFI37anzgtbV2200UY1DO6VR2WKEOvyuZngKhhMknmIxmND12b5C",// BCrypt.Net.BCrypt.HashPassword("Admin123"),
             IsActive = true

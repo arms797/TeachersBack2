@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
 
-[Authorize(Roles = "admin")]
+
 [ApiController]
 [Route("api/teacher-terms")]
 public class TeacherTermController : ControllerBase
@@ -16,104 +16,113 @@ public class TeacherTermController : ControllerBase
         _context = context;
     }
 
-    // 📄 دریافت همه اطلاعات ترمی
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    [Authorize]
+    [HttpGet("{code}/{term}")]
+    public async Task<IActionResult> GetByCodeAndTerm(string code, string term)
     {
         try
         {
-            var terms = await _context.TeacherTerms
-                .Include(t => t.Teacher)
-                .OrderByDescending(t => t.Term)
-                .ToListAsync();
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(term))
+                return BadRequest(new { message = "کد استاد یا ترم معتبر نیست." });
 
-            return Ok(terms);
+            var item = await _context.TeacherTerms
+                .FirstOrDefaultAsync(t => t.Code == code && t.Term == term);
+
+            if (item == null)
+                return NotFound(new { message = "رکوردی با این مشخصات یافت نشد." });
+
+            return Ok(item);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"خطا در دریافت اطلاعات ترمی: {ex.Message}");
+            return StatusCode(500, new { message = "خطا در دریافت اطلاعات ترمی.", detail = ex.Message });
         }
     }
 
-    // 🔍 دریافت اطلاعات ترمی یک استاد خاص
-    [HttpGet("by-teacher/{teacherId}")]
-    public async Task<IActionResult> GetByTeacher(int teacherId)
+    [Authorize(Roles = "admin,teacher")]
+    [HttpPut("{code}/{term}")]
+    public async Task<IActionResult> UpdateByCodeAndTerm(string code, string term, [FromBody] TeacherTerm updated)
     {
         try
         {
-            var items = await _context.TeacherTerms
-                .Where(t => t.TeacherId == teacherId)
-                .OrderByDescending(t => t.Term)
-                .ToListAsync();
+            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(term))
+                return BadRequest(new { message = "کد استاد یا ترم معتبر نیست." });
 
-            return Ok(items);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در دریافت اطلاعات ترمی استاد: {ex.Message}");
-        }
-    }
+            var item = await _context.TeacherTerms
+                .FirstOrDefaultAsync(t => t.Code == code && t.Term == term);
 
-    // ➕ افزودن اطلاعات ترمی
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] TeacherTerm model)
-    {
-        try
-        {
-            _context.TeacherTerms.Add(model);
-            await _context.SaveChangesAsync();
-            return Ok(model);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, $"خطا در افزودن اطلاعات ترمی: {ex.Message}");
-        }
-    }
+            if (item == null)
+                return NotFound(new { message = "رکوردی با این مشخصات یافت نشد." });
 
-    // ✏️ ویرایش اطلاعات ترمی
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] TeacherTerm model)
-    {
-        try
-        {
-            var term = await _context.TeacherTerms.FindAsync(id);
-            if (term == null)
-                return NotFound("رکورد ترمی یافت نشد");
-
-            term.Term = model.Term;
-            term.IsNeighborTeaching = model.IsNeighborTeaching;
-            term.NeighborTeaching = model.NeighborTeaching;
-            term.NeighborCenters = model.NeighborCenters;
-            term.Suggestion = model.Suggestion;
-            term.Projector = model.Projector;
-            term.Whiteboard2 = model.Whiteboard2;
+            // فقط فیلدهای قابل ویرایش
+            item.IsNeighborTeaching = updated.IsNeighborTeaching;
+            item.NeighborTeaching = updated.NeighborTeaching;
+            item.NeighborCenters = updated.NeighborCenters;
+            item.Suggestion = updated.Suggestion;
+            item.Projector = updated.Projector;
+            item.Whiteboard2 = updated.Whiteboard2;
 
             await _context.SaveChangesAsync();
-            return Ok(term);
+            return Ok(new { message = "اطلاعات ترمی با موفقیت ویرایش شد." });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"خطا در بروزرسانی اطلاعات ترمی: {ex.Message}");
+            return StatusCode(500, new { message = "خطا در ویرایش اطلاعات ترمی.", detail = ex.Message });
         }
     }
 
-    // ❌ حذف اطلاعات ترمی
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpPost("generate/{term}")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> GenerateTeacherTerms(string term)
     {
         try
         {
-            var term = await _context.TeacherTerms.FindAsync(id);
-            if (term == null)
-                return NotFound("رکورد ترمی یافت نشد");
+            if (string.IsNullOrWhiteSpace(term))
+                return BadRequest(new { message = "ترم معتبر ارسال نشده است." });
 
-            _context.TeacherTerms.Remove(term);
-            await _context.SaveChangesAsync();
-            return Ok("رکورد ترمی حذف شد");
+            var teachers = await _context.Teachers.ToListAsync();
+            int successCount = 0;
+            int errorCount = 0;
+
+            foreach (var teacher in teachers)
+            {
+                try
+                {
+                    var newTerm = new TeacherTerm
+                    {
+                        Code = teacher.Code,
+                        Term = term,
+                        IsNeighborTeaching = false,
+                        NeighborTeaching = "",
+                        NeighborCenters = "",
+                        Suggestion = "",
+                        Projector = false,
+                        Whiteboard2 = false
+                    };
+
+                    _context.TeacherTerms.Add(newTerm);
+                    await _context.SaveChangesAsync();
+                    successCount++;
+                }
+                catch
+                {
+                    errorCount++;
+                }
+            }
+
+            return Ok(new
+            {
+                message = "ایجاد اطلاعات ترمی برای همه اساتید انجام شد.",
+                successCount,
+                errorCount
+            });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"خطا در حذف اطلاعات ترمی: {ex.Message}");
+            return StatusCode(500, new { message = "خطای کلی در عملیات ایجاد اطلاعات ترمی.", detail = ex.Message });
         }
     }
+    
+
+
 }

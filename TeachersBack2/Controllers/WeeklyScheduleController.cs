@@ -6,7 +6,7 @@ using TeachersBack2.Models;
 
 namespace TeachersBack2.Controllers;
 
-[Authorize(Roles = "teacher")]
+
 [ApiController]
 [Route("api/weekly-schedule")]
 public class WeeklyScheduleController : ControllerBase
@@ -19,8 +19,8 @@ public class WeeklyScheduleController : ControllerBase
     }
 
     // 📌 دریافت برنامه هفتگی استاد بر اساس کد و ترم
-    [HttpGet("{teacherCode}/{term}")]
-    
+    [Authorize]
+    [HttpGet("{teacherCode}/{term}")]    
     public async Task<IActionResult> GetWeeklySchedule(string teacherCode, string term)
     {
         try
@@ -40,6 +40,7 @@ public class WeeklyScheduleController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "admin,teacher")]
     [HttpPut("weekly-schedule/{id}")]
     public async Task<IActionResult> UpdateWeeklySchedule(int id, [FromBody] WeeklySchedule updated)
     {
@@ -76,6 +77,7 @@ public class WeeklyScheduleController : ControllerBase
         }
     }
     
+   
     [HttpPost("weekly-schedule/generate-for-all/{term}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> GenerateWeeklyScheduleForAll(string term)

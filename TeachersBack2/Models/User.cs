@@ -8,7 +8,7 @@ public class User
     public string NationalCode { get; set; } = default!;
     public string Mobile { get; set; } = default!;
     public string Email { get; set; } = default!;
-    public int CenterCode { get; set; }
+    public string CenterCode { get; set; }
     public string Username { get; set; } = default!;
     public string PasswordHash { get; set; } = default!;
     public bool IsActive { get; set; } = true;
