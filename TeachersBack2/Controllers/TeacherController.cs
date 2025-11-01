@@ -48,6 +48,7 @@ public class TeacherController : ControllerBase
                 var code = row.Cell(1).GetString().Trim();
                 var fname = row.Cell(2).GetString().Trim();
                 var lname = row.Cell(3).GetString().Trim();
+                
 
                 bool isEmpty = string.IsNullOrWhiteSpace(code)
                             && string.IsNullOrWhiteSpace(fname)
@@ -71,7 +72,9 @@ public class TeacherController : ControllerBase
                 {
                         string p = row.Cell(4).GetString().Trim();
                         string pass = p != "" ? p : "Spnu123";
-                    var teacher = new Teacher
+                        var center_excel = row.Cell(8).GetString().Trim();
+
+                        var teacher = new Teacher
                     {
                         Code = code,
                         Fname = fname,
@@ -80,7 +83,7 @@ public class TeacherController : ControllerBase
                         Email = row.Cell(5).GetString().Trim(),
                         Mobile = row.Cell(6).GetString().Trim(),
                         FieldOfStudy = row.Cell(7).GetString().Trim(),
-                        Center = row.Cell(8).GetString().Trim(),
+                        Center = row.Cell(8).GetString().Trim(),                        
                         CooperationType = row.Cell(9).GetString().Trim(),
                         AcademicRank = row.Cell(10).GetString().Trim(),
                         ExecutivePosition = row.Cell(11).GetString().Trim(),
@@ -181,43 +184,46 @@ public class TeacherController : ControllerBase
     [HttpGet("paged")]
     [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> GetPaged(
-        int page = 1,
-        int pageSize = 30,
-        string search = "",
-        string cooperationType = "",
-        string center = "",
-        string fieldOfStudy = ""
-    )
+    int page = 1,
+    int pageSize = 30,
+    string search = "",
+    string cooperationType = "",
+    string center = "",
+    string fieldOfStudy = ""
+)
     {
         try
         {
-            var query = _context.Teachers.AsQueryable();
+            var query = from t in _context.Teachers
+                        join c in _context.Centers on t.Center equals c.CenterCode
+                        select new { Teacher = t, CenterTitle = c.Title };
 
             if (!string.IsNullOrWhiteSpace(search))
             {
                 string term = search.Trim();
-                query = query.Where(t =>
-                    (t.Code != null && t.Code.Contains(term)) ||
-                    (t.Fname != null && t.Fname.Contains(term)) ||
-                    (t.Lname != null && t.Lname.Contains(term))
+                query = query.Where(x =>
+                    (x.Teacher.Code != null && x.Teacher.Code.Contains(term)) ||
+                    (x.Teacher.Fname != null && x.Teacher.Fname.Contains(term)) ||
+                    (x.Teacher.Lname != null && x.Teacher.Lname.Contains(term))
                 );
             }
 
             if (!string.IsNullOrWhiteSpace(cooperationType))
-                query = query.Where(t => t.CooperationType == cooperationType);
+                query = query.Where(x => x.Teacher.CooperationType == cooperationType);
 
             if (!string.IsNullOrWhiteSpace(center))
-                query = query.Where(t => t.Center != null && t.Center.Contains(center));
+                query = query.Where(x => x.CenterTitle.Contains(center));
 
             if (!string.IsNullOrWhiteSpace(fieldOfStudy))
-                query = query.Where(t => t.FieldOfStudy != null && t.FieldOfStudy.Contains(fieldOfStudy));
+                query = query.Where(x => x.Teacher.FieldOfStudy != null && x.Teacher.FieldOfStudy.Contains(fieldOfStudy));
 
             var totalCount = await query.CountAsync();
 
             var items = await query
-                .OrderBy(t => t.Id)
+                .OrderBy(x => x.Teacher.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
+                .Select(x => x.Teacher) // ✅ فقط Teacher برمی‌گردد
                 .ToListAsync();
 
             return Ok(new { totalCount, items });
@@ -227,6 +233,8 @@ public class TeacherController : ControllerBase
             return StatusCode(500, $"خطا در دریافت اطلاعات: {ex.Message}");
         }
     }
+
+
 
     // 📄 دریافت استاد با آیدی
     /*
@@ -326,6 +334,20 @@ public class TeacherController : ControllerBase
         {
             return StatusCode(500, $"خطا در حذف استاد: {ex.Message}");
         }
+    }
+
+    [HttpPost("{id:int}/reset-password")]
+    [Authorize(Roles = "admin,centerAdmin")]
+    public async Task<IActionResult> ResetPassword(int id)
+    {
+        var t = await _context.Teachers.FindAsync(id);
+        if (t == null) return NotFound();
+
+        var newPass = t.NationalCode != null ? t.NationalCode : "Spnu123";
+        t.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPass);
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "رمز ریست شد", tempPassword = newPass });
     }
 
     // 🔍 جستجو بر اساس نام

@@ -49,8 +49,8 @@ public class AppDbContext : DbContext
 
         // Seed data
         var adminRole = new Role { Id = 1, Title = "admin", Description = "ادمین سایت" };
-        var center1 = new Center { CenterCode ="1", Title = "استان فارس" };
-        var center2 = new Center { CenterCode = "6293", Title = "شیراز" };
+        var center1 = new Center { CenterCode ="1", Title = "مدیریت پیام نور استان فارس" };
+        var center2 = new Center { CenterCode = "6293", Title = "مركز شیراز"};
 
         var adminUser = new User
         {
@@ -70,5 +70,48 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Center>().HasData(center1, center2);
         modelBuilder.Entity<User>().HasData(adminUser);
         modelBuilder.Entity<UserRole>().HasData(new { UserId = 1, RoleId = 1 });
+        string[,] arrCenters = new string[32, 2]
+    {
+        {"6317","مركز استهبان"},
+        {"1910","مركز اوز"},
+        {"1032","مركز آباده"},
+        {"1049","مركز بوانات"},
+        {"3974","مركز جهرم"},
+        {"4106","مركز خرامه"},
+        {"4533","مركز داراب"},
+        {"1061","مركز صفاشهر"},
+        {"3997","مركز فسا"},
+        {"6811","مركز فیروزآباد"},
+        {"9116","مركز كازرون"},
+        {"8054","مركز لامرد"},
+        {"9092","مركز نور آبادممسنی"},
+        {"2825","واحد ارسنجان"},
+        {"2848","واحد اقلید"},
+        {"2854","واحد بیضا"},
+        {"2877","واحد خاوران"},
+        {"29","واحد رستم"},
+        {"28","واحد زرقان"},
+        {"52","واحد زرین دشت"},
+        {"5764","واحد سپیدان"},
+        {"6323","واحد سروستان"},
+        {"2907","واحد فراشبند"},
+        {"5846","واحد قیروكارزین"},
+        {"5800","واحد كوار"},
+        {"2913","واحد لار"},
+        {"6300","واحد مرودشت"},
+        {"41","واحد نودان"},
+        {"4541","واحد نی ریز"},
+        {"2819","واحد آباده طشك"},
+        {"2883","واحد خنج"},
+        {"5817","واحد مهر"},
+
+    };
+        
+        for (int i = 0; i < 32; i++)
+        {
+            var c=new Center { CenterCode = arrCenters[i,0],Title = arrCenters[i,1] };
+            modelBuilder.Entity<Center>().HasData(c);
+        }
     }
+    
 }

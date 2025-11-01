@@ -11,7 +11,7 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251031171412_initDB")]
+    [Migration("20251101163011_initDB")]
     partial class initDB
     {
         /// <inheritdoc />
@@ -41,12 +41,172 @@ namespace TeachersBack2.Migrations
                         new
                         {
                             CenterCode = "1",
-                            Title = "استان فارس"
+                            Title = "مدیریت پیام نور استان فارس"
                         },
                         new
                         {
                             CenterCode = "6293",
-                            Title = "شیراز"
+                            Title = "مركز شیراز"
+                        },
+                        new
+                        {
+                            CenterCode = "6317",
+                            Title = "مركز استهبان"
+                        },
+                        new
+                        {
+                            CenterCode = "1910",
+                            Title = "مركز اوز"
+                        },
+                        new
+                        {
+                            CenterCode = "1032",
+                            Title = "مركز آباده"
+                        },
+                        new
+                        {
+                            CenterCode = "1049",
+                            Title = "مركز بوانات"
+                        },
+                        new
+                        {
+                            CenterCode = "3974",
+                            Title = "مركز جهرم"
+                        },
+                        new
+                        {
+                            CenterCode = "4106",
+                            Title = "مركز خرامه"
+                        },
+                        new
+                        {
+                            CenterCode = "4533",
+                            Title = "مركز داراب"
+                        },
+                        new
+                        {
+                            CenterCode = "1061",
+                            Title = "مركز صفاشهر"
+                        },
+                        new
+                        {
+                            CenterCode = "3997",
+                            Title = "مركز فسا"
+                        },
+                        new
+                        {
+                            CenterCode = "6811",
+                            Title = "مركز فیروزآباد"
+                        },
+                        new
+                        {
+                            CenterCode = "9116",
+                            Title = "مركز كازرون"
+                        },
+                        new
+                        {
+                            CenterCode = "8054",
+                            Title = "مركز لامرد"
+                        },
+                        new
+                        {
+                            CenterCode = "9092",
+                            Title = "مركز نور آبادممسنی"
+                        },
+                        new
+                        {
+                            CenterCode = "2825",
+                            Title = "واحد ارسنجان"
+                        },
+                        new
+                        {
+                            CenterCode = "2848",
+                            Title = "واحد اقلید"
+                        },
+                        new
+                        {
+                            CenterCode = "2854",
+                            Title = "واحد بیضا"
+                        },
+                        new
+                        {
+                            CenterCode = "2877",
+                            Title = "واحد خاوران"
+                        },
+                        new
+                        {
+                            CenterCode = "29",
+                            Title = "واحد رستم"
+                        },
+                        new
+                        {
+                            CenterCode = "28",
+                            Title = "واحد زرقان"
+                        },
+                        new
+                        {
+                            CenterCode = "52",
+                            Title = "واحد زرین دشت"
+                        },
+                        new
+                        {
+                            CenterCode = "5764",
+                            Title = "واحد سپیدان"
+                        },
+                        new
+                        {
+                            CenterCode = "6323",
+                            Title = "واحد سروستان"
+                        },
+                        new
+                        {
+                            CenterCode = "2907",
+                            Title = "واحد فراشبند"
+                        },
+                        new
+                        {
+                            CenterCode = "5846",
+                            Title = "واحد قیروكارزین"
+                        },
+                        new
+                        {
+                            CenterCode = "5800",
+                            Title = "واحد كوار"
+                        },
+                        new
+                        {
+                            CenterCode = "2913",
+                            Title = "واحد لار"
+                        },
+                        new
+                        {
+                            CenterCode = "6300",
+                            Title = "واحد مرودشت"
+                        },
+                        new
+                        {
+                            CenterCode = "41",
+                            Title = "واحد نودان"
+                        },
+                        new
+                        {
+                            CenterCode = "4541",
+                            Title = "واحد نی ریز"
+                        },
+                        new
+                        {
+                            CenterCode = "2819",
+                            Title = "واحد آباده طشك"
+                        },
+                        new
+                        {
+                            CenterCode = "2883",
+                            Title = "واحد خنج"
+                        },
+                        new
+                        {
+                            CenterCode = "5817",
+                            Title = "واحد مهر"
                         });
                 });
 
