@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.InkML;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Transactions;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
 
@@ -137,6 +140,110 @@ public class WeeklyScheduleController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, new { message = "خطای کلی در عملیات ایجاد برنامه هفتگی.", detail = ex.Message });
+        }
+    }
+
+    // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
+    [HttpPost("upload-excel")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> UploadExcel(IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("فایل معتبر نیست");
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1);
+
+            int addedCount = 0;
+            int duplicateCount = 0;
+            int errorCount = 0;
+            int skippedTermCount = 0;
+
+            foreach (var row in worksheet.RowsUsed().Skip(1))
+            {
+                using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+                try
+                {
+                    var code = row.Cell(1).GetString().Trim();
+                    var term = row.Cell(12).GetString().Trim();
+                    var center = row.Cell(3).GetString().Trim();
+
+                    
+
+                    bool isEmpty = string.IsNullOrWhiteSpace(code)
+                        && string.IsNullOrWhiteSpace(term)
+                        && string.IsNullOrWhiteSpace(center);
+                    if (isEmpty)
+                    {
+                        errorCount++;
+                        continue;
+                    }
+
+                    var existingTeacher = await _db.Teachers.FirstOrDefaultAsync(t => t.Code == code);
+                    var isterm = await _db.TermCalenders.FirstOrDefaultAsync(x => x.Term == term);
+                    if(center!="0")
+                    {
+                        var iscenter = await _db.Centers.FirstOrDefaultAsync(x => x.CenterCode == center);
+                        if (iscenter == null)
+                        {
+                            errorCount++;
+                            continue;
+                        }
+                    }         
+
+                    if (existingTeacher == null || isterm==null)
+                    {
+                        errorCount++;
+                        continue;
+                    }
+                    else
+                    {
+                        var ws = new WeeklySchedule
+                        {
+                            TeacherCode = code,
+                            DayOfWeek = row.Cell(2).GetString().Trim(),
+                            Center = center,
+                            A = row.Cell(4).GetString().Trim(),
+                            B = row.Cell(5).GetString().Trim(),
+                            C = row.Cell(6).GetString().Trim(),
+                            D = row.Cell(7).GetString().Trim(),
+                            E = row.Cell(8).GetString().Trim(),
+                            Description = row.Cell(9).GetString().Trim(),
+                            AlternativeHours = row.Cell(10).GetString().Trim(),
+                            ForbiddenHours = row.Cell(11).GetString().Trim(),
+                            Term = term
+                        };
+
+                        _db.WeeklySchedules.Add(ws);
+                        await _db.SaveChangesAsync();
+                        addedCount++;
+                    }
+                    scope.Complete();
+                }
+                catch
+                {
+                    errorCount++;
+                    // تراکنش لغو می‌شود
+                }
+            }
+
+            return Ok(new
+            {
+                addedCount,
+                duplicateCount,
+                skippedTermCount,
+                errorCount
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
         }
     }
 
