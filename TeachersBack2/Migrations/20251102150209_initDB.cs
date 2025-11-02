@@ -210,7 +210,13 @@ namespace TeachersBack2.Migrations
             migrationBuilder.InsertData(
                 table: "Roles",
                 columns: new[] { "Id", "Description", "Title" },
-                values: new object[] { 1, "ادمین سایت", "admin" });
+                values: new object[,]
+                {
+                    { 1, "ادمین سایت", "admin" },
+                    { 2, "ادمین مرکز", "centerAdmin" },
+                    { 3, "برنامه ریزی", "programmer" },
+                    { 4, "استاد", "teacher" }
+                });
 
             migrationBuilder.InsertData(
                 table: "Users",

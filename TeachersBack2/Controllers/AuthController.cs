@@ -135,11 +135,19 @@ public class AuthController : ControllerBase
     // Middleware ساده CSRF: بررسی هدر با کوکی
     private bool ValidateCsrf(HttpRequest request)
     {
-        var headerName = _config["Jwt:CsrfHeaderName"]!;
-        var cookieName = _config["Jwt:CsrfCookieName"]!;
-        var headerToken = request.Headers[headerName].FirstOrDefault();
-        var cookieToken = request.Cookies[cookieName];
-        return !string.IsNullOrEmpty(headerToken) && !string.IsNullOrEmpty(cookieToken) && headerToken == cookieToken;
+        try
+        {
+            var headerName = _config["Jwt:CsrfHeaderName"]!;
+            var cookieName = _config["Jwt:CsrfCookieName"]!;
+            var headerToken = request.Headers[headerName].FirstOrDefault();
+            var cookieToken = request.Cookies[cookieName];
+            return !string.IsNullOrEmpty(headerToken) && !string.IsNullOrEmpty(cookieToken) && headerToken == cookieToken;
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+        
     }
 
     [Authorize]
@@ -200,16 +208,24 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetCurrentUser()
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var username = User.Identity.Name;
-        var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-
-        return Ok(new
+        try
         {
-            id = userId,
-            username = username,
-            roles = roles
-        });
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.Identity.Name;
+            var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            return Ok(new
+            {
+                id = userId,
+                username = username,
+                roles = roles
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        
     }
 
 }

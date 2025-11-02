@@ -23,66 +23,106 @@ namespace TeachersBack2.Controllers
         [AllowAnonymous] // اگر بخوای لیست مراکز برای همه قابل دسترسی باشه
         public async Task<IActionResult> GetAll()
         {
-            var centers = await _context.Centers
+            try
+            {
+                var centers = await _context.Centers
                 .OrderBy(c => c.Title)
                 .ToListAsync();
 
-            return Ok(centers);
+                return Ok(centers);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // GET: api/Center/101
         [HttpGet("{centerCode}")]
         public async Task<IActionResult> Get(string centerCode)
         {
-            var center = await _context.Centers.FindAsync(centerCode);
-            if (center == null)
-                return NotFound(new { message = "مرکز مورد نظر یافت نشد." });
+            try
+            {
+                var center = await _context.Centers.FindAsync(centerCode);
+                if (center == null)
+                    return NotFound(new { message = "مرکز مورد نظر یافت نشد." });
 
-            return Ok(center);
+                return Ok(center);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // POST: api/Center
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Center model)
         {
-            if (await _context.Centers.AnyAsync(c => c.CenterCode == model.CenterCode))
-                return BadRequest(new { message = "مرکز با این کد قبلاً ثبت شده است." });
+            try
+            {
+                if (await _context.Centers.AnyAsync(c => c.CenterCode == model.CenterCode))
+                    return BadRequest(new { message = "مرکز با این کد قبلاً ثبت شده است." });
 
-            _context.Centers.Add(model);
-            await _context.SaveChangesAsync();
+                _context.Centers.Add(model);
+                await _context.SaveChangesAsync();
 
-            return Ok(model);
+                return Ok(model);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // PUT: api/Center/101
         [HttpPut("{centerCode}")]
         public async Task<IActionResult> Update(string centerCode, [FromBody] Center model)
         {
-            if (centerCode != model.CenterCode)
-                return BadRequest(new { message = "کد مرکز با آدرس مطابقت ندارد." });
+            try
+            {
+                if (centerCode != model.CenterCode)
+                    return BadRequest(new { message = "کد مرکز با آدرس مطابقت ندارد." });
 
-            var existing = await _context.Centers.FindAsync(centerCode);
-            if (existing == null)
-                return NotFound(new { message = "مرکز مورد نظر یافت نشد." });
+                var existing = await _context.Centers.FindAsync(centerCode);
+                if (existing == null)
+                    return NotFound(new { message = "مرکز مورد نظر یافت نشد." });
 
-            existing.Title = model.Title;
-            await _context.SaveChangesAsync();
+                existing.Title = model.Title;
+                await _context.SaveChangesAsync();
 
-            return Ok(existing);
+                return Ok(existing);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // DELETE: api/Center/101
         [HttpDelete("{centerCode}")]
         public async Task<IActionResult> Delete(string centerCode)
         {
-            var center = await _context.Centers.FindAsync(centerCode);
-            if (center == null)
-                return NotFound(new { message = "مرکز مورد نظر یافت نشد." });
+            try
+            {
+                var center = await _context.Centers.FindAsync(centerCode);
+                if (center == null)
+                    return NotFound(new { message = "مرکز مورد نظر یافت نشد." });
 
-            _context.Centers.Remove(center);
-            await _context.SaveChangesAsync();
+                _context.Centers.Remove(center);
+                await _context.SaveChangesAsync();
 
-            return Ok(new { message = "مرکز با موفقیت حذف شد." });
+                return Ok(new { message = "مرکز با موفقیت حذف شد." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
     }
 }

@@ -97,32 +97,36 @@ public class TeacherController : ControllerBase
                         addedCount++;
                
                         var termCode = row.Cell(18).GetString().Trim();
-                        bool termExists = await _context.TeacherTerms.AnyAsync(tt =>
+                        var termExists = await _context.TeacherTerms.FirstOrDefaultAsync(tt =>
                             tt.Code == code && tt.Term == termCode);
 
-                        if (termExists)
+                        if (termExists!=null)
                         {
-                            skippedTermCount++;
-                            continue;
+                            termExists.IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "false";
+                            termExists.NeighborTeaching = row.Cell(13).GetString().Trim();
+                            termExists.NeighborCenters = row.Cell(14).GetString().Trim();
+                            termExists.Suggestion = row.Cell(15).GetString().Trim();
+                            termExists.Projector = row.Cell(16).GetString().ToLower().Trim() == "false";
+                            termExists.Whiteboard2 = row.Cell(17).GetString().ToLower().Trim() == "false";
                         }
-
-                        var teacherTerm = new TeacherTerm
+                        else
                         {
-                            Code = code,
-                            Term = termCode,
-                            IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "false",
-                            NeighborTeaching = row.Cell(13).GetString().Trim(),
-                            NeighborCenters = row.Cell(14).GetString().Trim(),
-                            Suggestion = row.Cell(15).GetString().Trim(),
-                            Projector = row.Cell(16).GetString().ToLower().Trim() == "false",
-                            Whiteboard2 = row.Cell(17).GetString().ToLower().Trim() == "false"
-                        };
+                            var teacherTerm = new TeacherTerm
+                            {
+                                Code = code,
+                                Term = termCode,
+                                IsNeighborTeaching = row.Cell(12).GetString().ToLower().Trim() == "false",
+                                NeighborTeaching = row.Cell(13).GetString().Trim(),
+                                NeighborCenters = row.Cell(14).GetString().Trim(),
+                                Suggestion = row.Cell(15).GetString().Trim(),
+                                Projector = row.Cell(16).GetString().ToLower().Trim() == "false",
+                                Whiteboard2 = row.Cell(17).GetString().ToLower().Trim() == "false"
+                            };
 
-                        _context.TeacherTerms.Add(teacherTerm);
+                            _context.TeacherTerms.Add(teacherTerm);
+                        }                            
                         await _context.SaveChangesAsync();
-                    }
-
-                
+                    }              
 
                     scope.Complete();
                 }
@@ -221,27 +225,35 @@ public class TeacherController : ControllerBase
     [Authorize(Roles = "admin,centerAdmin,programmer")]
     public async Task<IActionResult> Create([FromBody] TeacherCreateDto dto)
     {
-
-        string pass = dto.NationalCode!=null ? dto.NationalCode : "Spnu123";
-        var teacher = new Teacher
+        try
         {
-            Code = dto.Code,
-            Fname = dto.Fname,
-            Lname = dto.Lname,
-            Email = dto.Email,
-            Mobile = dto.Mobile,
-            FieldOfStudy = dto.FieldOfStudy,
-            Center = dto.Center,
-            CooperationType = dto.CooperationType,
-            AcademicRank = dto.AcademicRank,
-            ExecutivePosition = dto.ExecutivePosition,
-            NationalCode=dto.NationalCode,
-            PasswordHash=BCrypt.Net.BCrypt.HashPassword(pass)
-        };
+            string pass = dto.NationalCode != null ? dto.NationalCode : "Spnu123";
+            var teacher = new Teacher
+            {
+                Code = dto.Code,
+                Fname = dto.Fname,
+                Lname = dto.Lname,
+                Email = dto.Email,
+                Mobile = dto.Mobile,
+                FieldOfStudy = dto.FieldOfStudy,
+                Center = dto.Center,
+                CooperationType = dto.CooperationType,
+                AcademicRank = dto.AcademicRank,
+                ExecutivePosition = dto.ExecutivePosition,
+                NationalCode = dto.NationalCode,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(pass)
+            };
 
-        _context.Teachers.Add(teacher);
-        await _context.SaveChangesAsync();
-        return Ok(teacher);
+            _context.Teachers.Add(teacher);
+            await _context.SaveChangesAsync();
+            return Ok(teacher);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex);
+        }
+
+        
     }
 
 
@@ -302,14 +314,22 @@ public class TeacherController : ControllerBase
     [Authorize(Roles = "admin,centerAdmin")]
     public async Task<IActionResult> ResetPassword(int id)
     {
-        var t = await _context.Teachers.FindAsync(id);
-        if (t == null) return NotFound();
+        try
+        {
+            var t = await _context.Teachers.FindAsync(id);
+            if (t == null) return NotFound();
 
-        var newPass = t.NationalCode != null ? t.NationalCode : "Spnu123";
-        t.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPass);
-        await _context.SaveChangesAsync();
+            var newPass = t.NationalCode != null ? t.NationalCode : "Spnu123";
+            t.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPass);
+            await _context.SaveChangesAsync();
 
-        return Ok(new { message = "رمز ریست شد", tempPassword = newPass });
+            return Ok(new { message = "رمز ریست شد", tempPassword = newPass });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex);
+        }
+        
     }
     // ساخت سرترم و برنامه هفتگی اساتید
     [HttpPost("sarterm/{term}")]

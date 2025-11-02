@@ -23,98 +23,131 @@ namespace TeachersBack2.Controllers
         [AllowAnonymous] // اگر بخوای همه دسترسی داشته باشن
         public async Task<IActionResult> GetAll()
         {
-            var terms = await _context.TermCalenders.OrderByDescending(t => t.Term).ToListAsync();
-            return Ok(terms);
+            try
+            {
+                var terms = await _context.TermCalenders.OrderByDescending(t => t.Term).ToListAsync();
+                return Ok(terms);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
-
-        // GET: api/TermCalender/term
-        /*
-        [HttpGet("term")]
-        [AllowAnonymous] // اگر بخوای همه دسترسی داشته باشن
-        public async Task<IActionResult> GetAllTerm()
-        {
-            var terms = await _context.TermCalenders
-                .OrderByDescending(t => t.Term)
-                .Select(t => t.Term)
-                .ToListAsync();
-
-            return Ok(terms);
-        }
-        */
 
         // GET: api/TermCalender/14031
         [HttpGet("{term}")]
         public async Task<IActionResult> Get(string term)
         {
-            var item = await _context.TermCalenders.FindAsync(term);
-            if (item == null)
-                return NotFound();
+            try
+            {
+                var item = await _context.TermCalenders.FindAsync(term);
+                if (item == null)
+                    return NotFound();
 
-            return Ok(item);
+                return Ok(item);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // POST: api/TermCalender
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] TermCalender model)
         {
-            if (await _context.TermCalenders.AnyAsync(t => t.Term == model.Term))
-                return BadRequest("ترم با این کد قبلاً ثبت شده است.");
+            try
+            {
+                if (await _context.TermCalenders.AnyAsync(t => t.Term == model.Term))
+                    return BadRequest("ترم با این کد قبلاً ثبت شده است.");
 
-            _context.TermCalenders.Add(model);
-            await _context.SaveChangesAsync();
-            return Ok(model);
+                _context.TermCalenders.Add(model);
+                await _context.SaveChangesAsync();
+                return Ok(model);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // PUT: api/TermCalender/14031
         [HttpPut("{term}")]
         public async Task<IActionResult> Update(string term, [FromBody] TermCalender model)
         {
-            if (term != model.Term)
-                return BadRequest("کد ترم با آدرس مطابقت ندارد.");
+            try
+            {
+                if (term != model.Term)
+                    return BadRequest("کد ترم با آدرس مطابقت ندارد.");
 
-            var existing = await _context.TermCalenders.FindAsync(term);
-            if (existing == null)
-                return NotFound();
+                var existing = await _context.TermCalenders.FindAsync(term);
+                if (existing == null)
+                    return NotFound();
 
-            existing.Title = model.Title;
-            existing.Start = model.Start;
-            existing.End = model.End;
+                existing.Title = model.Title;
+                existing.Start = model.Start;
+                existing.End = model.End;
 
-            await _context.SaveChangesAsync();
-            return Ok(existing);
+                await _context.SaveChangesAsync();
+                return Ok(existing);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // DELETE: api/TermCalender/14031
         [HttpDelete("{term}")]
         public async Task<IActionResult> Delete(string term)
         {
-            var item = await _context.TermCalenders.FindAsync(term);
-            if (item == null)
-                return NotFound();
+            try
+            {
+                var item = await _context.TermCalenders.FindAsync(term);
+                if (item == null)
+                    return NotFound();
 
-            _context.TermCalenders.Remove(item);
-            await _context.SaveChangesAsync();
-            return Ok();
+                _context.TermCalenders.Remove(item);
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // PUT: api/TermCalender/activate/1403-1
         [HttpPut("activate/{term}")]
         public async Task<IActionResult> ActivateTerm(string term)
         {
-            var targetTerm = await _context.TermCalenders.FindAsync(term);
-            if (targetTerm == null)
-                return NotFound(new { message = "ترم مورد نظر یافت نشد." });
+            try
+            {
+                var targetTerm = await _context.TermCalenders.FindAsync(term);
+                if (targetTerm == null)
+                    return NotFound(new { message = "ترم مورد نظر یافت نشد." });
 
-            // غیرفعال کردن همه ترم‌ها
-            var allTerms = await _context.TermCalenders.ToListAsync();
-            foreach (var t in allTerms)
-                t.Active = false;
+                // غیرفعال کردن همه ترم‌ها
+                var allTerms = await _context.TermCalenders.ToListAsync();
+                foreach (var t in allTerms)
+                    t.Active = false;
 
-            // فعال کردن ترم انتخاب‌شده
-            targetTerm.Active = true;
+                // فعال کردن ترم انتخاب‌شده
+                targetTerm.Active = true;
 
-            await _context.SaveChangesAsync();
-            return Ok(new { message = $"ترم {term} با موفقیت فعال شد." });
+                await _context.SaveChangesAsync();
+                return Ok(new { message = $"ترم {term} با موفقیت فعال شد." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
 

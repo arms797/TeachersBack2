@@ -235,6 +235,24 @@ namespace TeachersBack2.Migrations
                             Id = 1,
                             Description = "ادمین سایت",
                             Title = "admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "ادمین مرکز",
+                            Title = "centerAdmin"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "برنامه ریزی",
+                            Title = "programmer"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "استاد",
+                            Title = "teacher"
                         });
                 });
 

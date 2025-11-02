@@ -11,7 +11,7 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251101163011_initDB")]
+    [Migration("20251102150209_initDB")]
     partial class initDB
     {
         /// <inheritdoc />
@@ -238,6 +238,24 @@ namespace TeachersBack2.Migrations
                             Id = 1,
                             Description = "ادمین سایت",
                             Title = "admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "ادمین مرکز",
+                            Title = "centerAdmin"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "برنامه ریزی",
+                            Title = "programmer"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Description = "استاد",
+                            Title = "teacher"
                         });
                 });
 

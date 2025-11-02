@@ -49,6 +49,9 @@ public class AppDbContext : DbContext
 
         // Seed data
         var adminRole = new Role { Id = 1, Title = "admin", Description = "ادمین سایت" };
+        var adminRole2 = new Role { Id = 2, Title = "centerAdmin", Description = "ادمین مرکز" };
+        var adminRole3 = new Role { Id = 3, Title = "programmer", Description = "برنامه ریزی" };
+        var adminRole4 = new Role { Id = 4, Title = "teacher", Description = "استاد" };
         var center1 = new Center { CenterCode ="1", Title = "مدیریت پیام نور استان فارس" };
         var center2 = new Center { CenterCode = "6293", Title = "مركز شیراز"};
 
@@ -67,6 +70,9 @@ public class AppDbContext : DbContext
         };
 
         modelBuilder.Entity<Role>().HasData(adminRole);
+        modelBuilder.Entity<Role>().HasData(adminRole2);
+        modelBuilder.Entity<Role>().HasData(adminRole3);
+        modelBuilder.Entity<Role>().HasData(adminRole4);
         modelBuilder.Entity<Center>().HasData(center1, center2);
         modelBuilder.Entity<User>().HasData(adminUser);
         modelBuilder.Entity<UserRole>().HasData(new { UserId = 1, RoleId = 1 });
