@@ -328,13 +328,12 @@ public class TeacherController : ControllerBase
         catch (Exception ex)
         {
             return BadRequest(ex);
-        }
-        
+        }        
     }
     // ساخت سرترم و برنامه هفتگی اساتید
-    [HttpPost("sarterm/{term}")]
+    [HttpPost("sarterm/{term}/{reset}")]
     [Authorize(Roles ="admin")]
-    public async Task<IActionResult> CreateSarterm(string term)
+    public async Task<IActionResult> CreateSarterm(string term,bool reset=false)
     {
         try
         {
@@ -345,45 +344,93 @@ public class TeacherController : ControllerBase
                 .Where(x => x.Term == term).ToListAsync();
             var weekly=await _context.WeeklySchedules
                 .Where(x=>x.Term== term).ToListAsync();
-            _context.TeacherTerms.RemoveRange(teacherterms);
-            _context.WeeklySchedules.RemoveRange(weekly);
-            await _context.SaveChangesAsync();
+            if(reset==true)
+            {
+                _context.TeacherTerms.RemoveRange(teacherterms);
+                _context.WeeklySchedules.RemoveRange(weekly);
+                await _context.SaveChangesAsync();
+            }            
             var teachers = await _context.Teachers.ToListAsync();
             string[] dof = { "شنبه", "یکشنبه", "دوشنبه", "سه شنبه", "چهارشنبه", "پنجشنبه", "جمعه" };
             int counter = 0;
             foreach (var t in teachers)
-            {
-                var tt = new TeacherTerm
+            {   if(reset==false)
                 {
-                    Code=t.Code,
-                    Term=term,
-                    IsNeighborTeaching=false,
-                    NeighborCenters="",
-                    NeighborTeaching="",
-                    Suggestion="",
-                    Projector=false,
-                    Whiteboard2=false,
-                };
-                _context.TeacherTerms.AddAsync(tt);
-                for(int i=0;i<dof.Length;i++)
-                {
-                    var ws = new WeeklySchedule
+                    var isteacherterm=await _context.TeacherTerms.FirstOrDefaultAsync(x=>x.Code==t.Code && x.Term==term);
+                    if (isteacherterm == null)
                     {
-                        TeacherCode = t.Code,
-                        DayOfWeek = dof[i],
-                        Center = t.Center,
-                        A = "عدم حضور در دانشگاه",
-                        B = "عدم حضور در دانشگاه",
-                        C = "عدم حضور در دانشگاه",
-                        D = "عدم حضور در دانشگاه",
-                        E = "عدم حضور در دانشگاه",
-                        Description="",
-                        AlternativeHours="",
-                        ForbiddenHours="",
-                        Term=term
-                    };
-                    _context.WeeklySchedules.AddAsync(ws);
+                        var tt = new TeacherTerm
+                        {
+                            Code = t.Code,
+                            Term = term,
+                            IsNeighborTeaching = false,
+                            NeighborCenters = "",
+                            NeighborTeaching = "",
+                            Suggestion = "",
+                            Projector = false,
+                            Whiteboard2 = false,
+                        };
+                        _context.TeacherTerms.AddAsync(tt);
+                    }
+                    var isws=await _context.WeeklySchedules.Where(x=>x.TeacherCode==t.Code && x.Term==term).ToListAsync();
+                        
+                    for (int i = 0; i < dof.Length; i++)
+                    {
+                        if (isws.FirstOrDefault(x => x.DayOfWeek == dof[i])==null)
+                        {
+                            var ws = new WeeklySchedule
+                            {
+                                TeacherCode = t.Code,
+                                DayOfWeek = dof[i],
+                                Center = t.Center,
+                                A = "عدم حضور در دانشگاه",
+                                B = "عدم حضور در دانشگاه",
+                                C = "عدم حضور در دانشگاه",
+                                D = "عدم حضور در دانشگاه",
+                                E = "عدم حضور در دانشگاه",
+                                Description = "",
+                                AlternativeHours = "",
+                                ForbiddenHours = "",
+                                Term = term
+                            };
+                            _context.WeeklySchedules.AddAsync(ws);
+                        }                            
+                    }                    
                 }
+                else
+                {
+                    var tt = new TeacherTerm
+                    {
+                        Code = t.Code,
+                        Term = term,
+                        IsNeighborTeaching = false,
+                        NeighborCenters = "",
+                        NeighborTeaching = "",
+                        Suggestion = "",
+                        Projector = false,
+                        Whiteboard2 = false,
+                    };
+                    _context.TeacherTerms.AddAsync(tt);
+                    for (int i = 0; i < dof.Length; i++)
+                    {
+                        var ws = new WeeklySchedule
+                        {
+                            TeacherCode = t.Code,
+                            DayOfWeek = dof[i],
+                            Center = t.Center,
+                            A = "عدم حضور در دانشگاه",
+                            B = "عدم حضور در دانشگاه",
+                            C = "عدم حضور در دانشگاه",
+                            D = "عدم حضور در دانشگاه",
+                            E = "عدم حضور در دانشگاه",
+                            Description = "",
+                            AlternativeHours = "",
+                            ForbiddenHours = "",
+                            Term = term
+                        };
+                        _context.WeeklySchedules.AddAsync(ws);
+                    }
+                }                    
                 await _context.SaveChangesAsync();
                 counter++;
             }
@@ -395,4 +442,55 @@ public class TeacherController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpGet("teacherTermSchedule/{code}/{term}")]
+    [Authorize]
+    public async Task<IActionResult> GetTeacherProfile(string code, string term)
+    {
+        try
+        {
+            var teacher = await _context.Teachers
+                .Where(t => t.Code == code)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Code,
+                    t.Fname,
+                    t.Lname,
+                    t.Email,
+                    t.Mobile,
+                    t.FieldOfStudy,
+                    t.Center,
+                    t.CooperationType,
+                    t.AcademicRank,
+                    t.ExecutivePosition,
+                    t.NationalCode
+                    // رمز عبور حذف شده
+                })
+                .FirstOrDefaultAsync();
+
+            if (teacher == null)
+                return NotFound(new { message = "استاد مورد نظر یافت نشد." });
+
+            var termInfo = await _context.TeacherTerms
+                .FirstOrDefaultAsync(tt => tt.Code == code && tt.Term == term);
+
+            var weeklySchedule = await _context.WeeklySchedules
+                .Where(ws => ws.TeacherCode == code && ws.Term == term)
+                .OrderBy(ws => ws.DayOfWeek)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                teacher,
+                termInfo,
+                weeklySchedule
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "خطا در دریافت اطلاعات", error = ex.Message });
+        }
+    }
+
 }

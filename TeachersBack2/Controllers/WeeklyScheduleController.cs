@@ -1,5 +1,6 @@
 ﻿using ClosedXML.Excel;
 using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +12,7 @@ namespace TeachersBack2.Controllers;
 
 
 [ApiController]
-[Route("api/weekly-schedule")]
+[Route("api/[controller]")]
 public class WeeklyScheduleController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -44,7 +45,7 @@ public class WeeklyScheduleController : ControllerBase
     }
 
     [Authorize(Roles = "admin,teacher")]
-    [HttpPut("weekly-schedule/{id}")]
+    [HttpPut("updateSchedule/{id}")]
     public async Task<IActionResult> UpdateWeeklySchedule(int id, [FromBody] WeeklySchedule updated)
     {
         try
@@ -54,7 +55,7 @@ public class WeeklyScheduleController : ControllerBase
                 return Unauthorized(new { message = "کد استاد معتبر نیست." });
 
             var schedule = await _db.WeeklySchedules
-                .FirstOrDefaultAsync(ws => ws.Id == id && ws.TeacherCode == code);
+                .FirstOrDefaultAsync(ws => ws.Id == id );
 
             if (schedule == null)
                 return NotFound(new { message = "رکورد برنامه هفتگی یافت نشد یا متعلق به شما نیست." });
@@ -204,23 +205,40 @@ public class WeeklyScheduleController : ControllerBase
                     }
                     else
                     {
-                        var ws = new WeeklySchedule
+                        var dow = row.Cell(2).GetString().Trim();
+                        var isws=await _db.WeeklySchedules.FirstOrDefaultAsync(
+                            x=>x.TeacherCode == code && x.Term==term && x.DayOfWeek==dow);
+                        if (isws == null)
                         {
-                            TeacherCode = code,
-                            DayOfWeek = row.Cell(2).GetString().Trim(),
-                            Center = center,
-                            A = row.Cell(4).GetString().Trim(),
-                            B = row.Cell(5).GetString().Trim(),
-                            C = row.Cell(6).GetString().Trim(),
-                            D = row.Cell(7).GetString().Trim(),
-                            E = row.Cell(8).GetString().Trim(),
-                            Description = row.Cell(9).GetString().Trim(),
-                            AlternativeHours = row.Cell(10).GetString().Trim(),
-                            ForbiddenHours = row.Cell(11).GetString().Trim(),
-                            Term = term
-                        };
-
-                        _db.WeeklySchedules.Add(ws);
+                            var ws = new WeeklySchedule
+                            {
+                                TeacherCode = code,
+                                DayOfWeek = row.Cell(2).GetString().Trim(),
+                                Center = center,
+                                A = row.Cell(4).GetString().Trim(),
+                                B = row.Cell(5).GetString().Trim(),
+                                C = row.Cell(6).GetString().Trim(),
+                                D = row.Cell(7).GetString().Trim(),
+                                E = row.Cell(8).GetString().Trim(),
+                                Description = row.Cell(9).GetString().Trim(),
+                                AlternativeHours = row.Cell(10).GetString().Trim(),
+                                ForbiddenHours = row.Cell(11).GetString().Trim(),
+                                Term = term
+                            };
+                            _db.WeeklySchedules.Add(ws);
+                        }
+                        else
+                        {
+                            isws.Center= center;
+                            isws.A = row.Cell(4).GetString().Trim()!=""? row.Cell(4).GetString().Trim():isws.A;
+                            isws.B = row.Cell(5).GetString().Trim() != "" ? row.Cell(5).GetString().Trim() : isws.B;
+                            isws.C = row.Cell(6).GetString().Trim() != "" ? row.Cell(6).GetString().Trim() : isws.C;
+                            isws.D = row.Cell(7).GetString().Trim() != "" ? row.Cell(7).GetString().Trim() : isws.D;
+                            isws.E = row.Cell(8).GetString().Trim() != "" ? row.Cell(8).GetString().Trim() : isws.E;
+                            isws.Description = row.Cell(9).GetString().Trim();
+                            isws.AlternativeHours = row.Cell(10).GetString().Trim();
+                            isws.ForbiddenHours = row.Cell(11).GetString().Trim();
+                        }
                         await _db.SaveChangesAsync();
                         addedCount++;
                     }
