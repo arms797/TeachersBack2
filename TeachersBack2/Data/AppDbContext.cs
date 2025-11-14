@@ -52,7 +52,7 @@ public class AppDbContext : DbContext
         var adminRole2 = new Role { Id = 2, Title = "centerAdmin", Description = "ادمین مرکز" };
         var adminRole3 = new Role { Id = 3, Title = "programmer", Description = "برنامه ریزی" };
         var adminRole4 = new Role { Id = 4, Title = "teacher", Description = "استاد" };
-        var center1 = new Center { CenterCode ="1", Title = "مدیریت پیام نور استان فارس" };
+        var center1 = new Center { CenterCode ="1", Title = "ستاد استان" };
         var center2 = new Center { CenterCode = "6293", Title = "مركز شیراز"};
 
         var adminUser = new User

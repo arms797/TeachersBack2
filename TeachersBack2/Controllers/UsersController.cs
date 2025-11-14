@@ -167,32 +167,45 @@ public class UsersController : ControllerBase
         }
         
     }
+    
     [HttpPost("{id:int}/roles/{roleId:int}/")]
-    public async Task<IActionResult> AddUserRole(int id,int roleId)
+    public async Task<IActionResult> AddUserRole(int id, int roleId)
     {
         try
         {
             var user = await _db.Users.FindAsync(id);
-            if (user == null) return NotFound();
+            if (user == null) return NotFound("کاربر یافت نشد.");
+
             var role = await _db.Roles.FindAsync(roleId);
-            if (role == null) return NotFound();
-            var ur = await _db.UserRoles.Where(u => u.RoleId == roleId && u.UserId == id).FirstOrDefaultAsync();
-            if (ur != null) return NotFound();
+            if (role == null) return NotFound("نقش یافت نشد.");
+
+            // جلوگیری از اختصاص نقش teacher
+            if (role.Title.ToLower() == "teacher")
+                return BadRequest("نقش 'teacher' فقط مخصوص اساتید است و نمی‌توان آن را به کاربران سیستم اختصاص داد.");
+
+            var ur = await _db.UserRoles
+                .FirstOrDefaultAsync(u => u.RoleId == roleId && u.UserId == id);
+            if (ur != null)
+                return BadRequest("این نقش قبلاً به کاربر اختصاص داده شده است.");
+
             var userRole = new UserRole
             {
                 UserId = user.Id,
                 RoleId = role.Id
             };
+
             _db.UserRoles.Add(userRole);
             await _db.SaveChangesAsync();
+
             return Ok(userRole);
         }
         catch (Exception ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest($"خطا در اختصاص نقش: {ex.Message}");
         }
-        
     }
+
+
     [HttpDelete("{id:int}/roles/{roleId:int}/")]
     public async Task<IActionResult> DeleteUserRole(int id, int roleId)
     {

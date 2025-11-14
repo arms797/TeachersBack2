@@ -39,6 +39,7 @@ public class AuthController : ControllerBase
 
                 if (!BCrypt.Net.BCrypt.Verify(dto.Password, teacher.PasswordHash))
                     return Unauthorized(new { message = "نام کاربری یا رمز عبور اشتباه است." });
+                //var fullName = teacher.Fname + teacher.Lname;
 
                 var token = _jwt.GenerateToken(teacher.Id, teacher.Code, new List<string> { "teacher" });
 
@@ -80,41 +81,6 @@ public class AuthController : ControllerBase
             return StatusCode(500, new { message = "خطا در ورود.", detail = ex.Message });
         }
     }
-
-    /*   [HttpPost("login")]
-       public async Task<IActionResult> Login([FromBody] LoginDto dto)
-       {
-           try
-           {
-               var user = await _db.Users
-                   .Include(u => u.UserRoles).ThenInclude(ur => ur.Role)
-                   .FirstOrDefaultAsync(u => u.Username == dto.Username);
-
-               if (user is null || !user.IsActive)
-                   return Unauthorized(new { message = "کاربر یافت نشد یا غیرفعال است." });
-
-               if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                   return Unauthorized(new { message = "نام کاربری یا رمز عبور اشتباه است." });
-
-               var roles = user.UserRoles.Select(ur => ur.Role.Title).ToList();
-               var token = _jwt.GenerateToken(user.Id, user.Username, roles);
-
-               // Set HttpOnly auth cookie
-               var cookieName = _config["Jwt:CookieName"]!;
-               CookieHelper.SetAuthCookie(Response, cookieName, token);
-
-               // CSRF token (Double Submit Cookie)
-               var csrfToken = CookieHelper.GenerateCsrfToken();
-               CookieHelper.SetCsrfCookie(Response, _config["Jwt:CsrfCookieName"]!, csrfToken);
-
-               return Ok(new { message = "ورود موفق.", roles });
-           }
-           catch (Exception ex)
-           {
-               return StatusCode(500, new { message = "خطا در ورود.", detail = ex.Message });
-           }
-       }
-    */
 
     [Authorize]
     [HttpPost("logout")]

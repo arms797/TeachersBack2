@@ -11,7 +11,7 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251102150209_initDB")]
+    [Migration("20251108153618_initDB")]
     partial class initDB
     {
         /// <inheritdoc />
@@ -41,7 +41,7 @@ namespace TeachersBack2.Migrations
                         new
                         {
                             CenterCode = "1",
-                            Title = "مدیریت پیام نور استان فارس"
+                            Title = "ستاد استان"
                         },
                         new
                         {

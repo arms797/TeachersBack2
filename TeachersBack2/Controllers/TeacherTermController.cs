@@ -6,7 +6,7 @@ using TeachersBack2.Models;
 
 
 [ApiController]
-[Route("api/teacher-terms")]
+[Route("api/[controller]")]
 public class TeacherTermController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -40,16 +40,15 @@ public class TeacherTermController : ControllerBase
     }
 
     [Authorize(Roles = "admin,teacher")]
-    [HttpPut("{code}/{term}")]
-    public async Task<IActionResult> UpdateByCodeAndTerm(string code, string term, [FromBody] TeacherTerm updated)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateByCodeAndTerm(int id, [FromBody] TeacherTerm updated)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(term))
-                return BadRequest(new { message = "کد استاد یا ترم معتبر نیست." });
+            //if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(term))
+            //    return BadRequest(new { message = "کد استاد یا ترم معتبر نیست." });
 
-            var item = await _context.TeacherTerms
-                .FirstOrDefaultAsync(t => t.Code == code && t.Term == term);
+            var item = await _context.TeacherTerms.FirstOrDefaultAsync(t => t.Id==id);
 
             if (item == null)
                 return NotFound(new { message = "رکوردی با این مشخصات یافت نشد." });

@@ -171,7 +171,7 @@ namespace TeachersBack2.Migrations
                 columns: new[] { "CenterCode", "Title" },
                 values: new object[,]
                 {
-                    { "1", "مدیریت پیام نور استان فارس" },
+                    { "1", "ستاد استان" },
                     { "1032", "مركز آباده" },
                     { "1049", "مركز بوانات" },
                     { "1061", "مركز صفاشهر" },

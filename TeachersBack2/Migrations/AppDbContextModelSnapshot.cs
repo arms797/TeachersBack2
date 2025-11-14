@@ -38,7 +38,7 @@ namespace TeachersBack2.Migrations
                         new
                         {
                             CenterCode = "1",
-                            Title = "مدیریت پیام نور استان فارس"
+                            Title = "ستاد استان"
                         },
                         new
                         {

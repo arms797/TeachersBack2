@@ -1,6 +1,4 @@
 ﻿using ClosedXML.Excel;
-using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +22,7 @@ public class WeeklyScheduleController : ControllerBase
 
     // 📌 دریافت برنامه هفتگی استاد بر اساس کد و ترم
     [Authorize]
-    [HttpGet("{teacherCode}/{term}")]    
+    [HttpGet("{teacherCode}/{term}")]
     public async Task<IActionResult> GetWeeklySchedule(string teacherCode, string term)
     {
         try
@@ -55,7 +53,7 @@ public class WeeklyScheduleController : ControllerBase
                 return Unauthorized(new { message = "کد استاد معتبر نیست." });
 
             var schedule = await _db.WeeklySchedules
-                .FirstOrDefaultAsync(ws => ws.Id == id );
+                .FirstOrDefaultAsync(ws => ws.Id == id);
 
             if (schedule == null)
                 return NotFound(new { message = "رکورد برنامه هفتگی یافت نشد یا متعلق به شما نیست." });
@@ -80,8 +78,8 @@ public class WeeklyScheduleController : ControllerBase
             return StatusCode(500, new { message = "خطا در ویرایش برنامه هفتگی.", detail = ex.Message });
         }
     }
-    
-   
+
+
     [HttpPost("weekly-schedule/generate-for-all/{term}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> GenerateWeeklyScheduleForAll(string term)
@@ -175,7 +173,7 @@ public class WeeklyScheduleController : ControllerBase
                     var term = row.Cell(12).GetString().Trim();
                     var center = row.Cell(3).GetString().Trim();
 
-                    
+
 
                     bool isEmpty = string.IsNullOrWhiteSpace(code)
                         && string.IsNullOrWhiteSpace(term)
@@ -188,17 +186,18 @@ public class WeeklyScheduleController : ControllerBase
 
                     var existingTeacher = await _db.Teachers.FirstOrDefaultAsync(t => t.Code == code);
                     var isterm = await _db.TermCalenders.FirstOrDefaultAsync(x => x.Term == term);
-                    if(center!="0")
+                    if (center != "0")
                     {
                         var iscenter = await _db.Centers.FirstOrDefaultAsync(x => x.CenterCode == center);
                         if (iscenter == null)
                         {
-                            errorCount++;
-                            continue;
+                            center = existingTeacher.Center;
+                            //errorCount++;
+                            //continue;
                         }
-                    }         
+                    }
 
-                    if (existingTeacher == null || isterm==null)
+                    if (existingTeacher == null || isterm == null)
                     {
                         errorCount++;
                         continue;
@@ -206,8 +205,8 @@ public class WeeklyScheduleController : ControllerBase
                     else
                     {
                         var dow = row.Cell(2).GetString().Trim();
-                        var isws=await _db.WeeklySchedules.FirstOrDefaultAsync(
-                            x=>x.TeacherCode == code && x.Term==term && x.DayOfWeek==dow);
+                        var isws = await _db.WeeklySchedules.FirstOrDefaultAsync(
+                            x => x.TeacherCode == code && x.Term == term && x.DayOfWeek == dow);
                         if (isws == null)
                         {
                             var ws = new WeeklySchedule
@@ -229,8 +228,8 @@ public class WeeklyScheduleController : ControllerBase
                         }
                         else
                         {
-                            isws.Center= center;
-                            isws.A = row.Cell(4).GetString().Trim()!=""? row.Cell(4).GetString().Trim():isws.A;
+                            isws.Center = center;
+                            isws.A = row.Cell(4).GetString().Trim() != "" ? row.Cell(4).GetString().Trim() : isws.A;
                             isws.B = row.Cell(5).GetString().Trim() != "" ? row.Cell(5).GetString().Trim() : isws.B;
                             isws.C = row.Cell(6).GetString().Trim() != "" ? row.Cell(6).GetString().Trim() : isws.C;
                             isws.D = row.Cell(7).GetString().Trim() != "" ? row.Cell(7).GetString().Trim() : isws.D;
