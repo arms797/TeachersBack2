@@ -79,7 +79,7 @@ public class WeeklyScheduleController : ControllerBase
         }
     }
 
-
+/*
     [HttpPost("weekly-schedule/generate-for-all/{term}")]
     [Authorize(Roles = "admin")]
     public async Task<IActionResult> GenerateWeeklyScheduleForAll(string term)
@@ -141,7 +141,7 @@ public class WeeklyScheduleController : ControllerBase
             return StatusCode(500, new { message = "خطای کلی در عملیات ایجاد برنامه هفتگی.", detail = ex.Message });
         }
     }
-
+*/
     // 📥 بارگذاری دسته‌جمعی از طریق فایل اکسل
     [HttpPost("upload-excel")]
     [Authorize(Roles = "admin")]
@@ -263,6 +263,5 @@ public class WeeklyScheduleController : ControllerBase
             return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
         }
     }
-
 
 }

@@ -3,8 +3,24 @@ using Microsoft.OpenApi.Models;
 using TeachersBack2.Data;
 using TeachersBack2.Services;
 using Microsoft.Extensions.DependencyInjection; // برای AddNewtonsoftJson
+using Microsoft.AspNetCore.DataProtection;
+using System.IO;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//برای رمزنگاری 
+builder.Services.AddDataProtection()
+    // این مسیر باید با مسیری که در گام ۵ می‌سازید، یکی باشد.
+    .PersistKeysToFileSystem(new DirectoryInfo(@"D:\DataProtectionKeys"))
+    .ProtectKeysWithDpapi(); // استفاده از Windows DPAPI برای رمزنگاری کلیدهای ذخیره شده
+// در بخش builder.Services
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear(); // به هیچ شبکه یا پراکسی خارجی اعتماد نمی‌کنید
+    options.KnownProxies.Clear();
+});
 
 // DbContext
 builder.Services.AddDbContext<AppDbContext>(opt =>
@@ -92,6 +108,9 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+
+// **مهم:** قبل از Authentication اضافه شود.
+app.UseForwardedHeaders();
 
 app.UseAuthentication();
 app.UseAuthorization();
