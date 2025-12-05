@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
     public DbSet<WeeklySchedule> WeeklySchedules { get; set; }
     public DbSet<TermCalender> TermCalenders { get; set; }
     public DbSet<TeacherTerm> TeacherTerms { get; set; }
+    public DbSet<ComponentFeature> ComponentFeatures { get; set; }
+    public DbSet<Announcement> Announcements { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +56,13 @@ public class AppDbContext : DbContext
         var adminRole4 = new Role { Id = 4, Title = "teacher", Description = "استاد" };
         var center1 = new Center { CenterCode ="1", Title = "ستاد استان" };
         var center2 = new Center { CenterCode = "6293", Title = "مركز شیراز"};
+        var component = new ComponentFeature
+        {
+            Id = 1,
+            Name = "ExamSeat",
+            Description = "کامپوننت شماره صندلی امتحانات پایان ترم دانشجو",
+            IsActive = false
+        };
 
         var adminUser = new User
         {
@@ -76,6 +85,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Center>().HasData(center1, center2);
         modelBuilder.Entity<User>().HasData(adminUser);
         modelBuilder.Entity<UserRole>().HasData(new { UserId = 1, RoleId = 1 });
+        modelBuilder.Entity<ComponentFeature>().HasData(component);
         string[,] arrCenters = new string[32, 2]
     {
         {"6317","مركز استهبان"},
