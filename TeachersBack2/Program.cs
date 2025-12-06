@@ -106,7 +106,7 @@ builder.Services.AddSingleton<JwtService>();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 // **مهم:** قبل از Authentication اضافه شود.

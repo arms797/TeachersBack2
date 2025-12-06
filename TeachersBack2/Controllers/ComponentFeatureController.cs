@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TeachersBack2.Data;
 using TeachersBack2.Models;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "admin")]
 public class ComponentFeatureController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -100,4 +102,25 @@ public class ComponentFeatureController : ControllerBase
             return StatusCode(500, $"خطا در تغییر وضعیت کامپوننت: {ex.Message}");
         }
     }
+
+    // لیست کامپوننت‌های فعال
+    [HttpGet("active")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetActive()
+    {
+        try
+        {
+            var activeFeatures = await _db.ComponentFeatures
+                .Where(f => f.IsActive)
+                .Select(f => new { f.Name, f.Description })
+                .ToListAsync();
+
+            return Ok(activeFeatures);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"خطا در دریافت کامپوننت‌های فعال: {ex.Message}");
+        }
+    }
+
 }
