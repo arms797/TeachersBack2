@@ -11,9 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 //برای رمزنگاری 
 builder.Services.AddDataProtection()
-    // این مسیر باید با مسیری که در گام ۵ می‌سازید، یکی باشد.
-    .PersistKeysToFileSystem(new DirectoryInfo(@"D:\DataProtectionKeys"))
-    .ProtectKeysWithDpapi(); // استفاده از Windows DPAPI برای رمزنگاری کلیدهای ذخیره شده
+    .PersistKeysToFileSystem(new DirectoryInfo(@"C:\DataProtectionKeys"))
+    .ProtectKeysWithDpapi(protectToLocalMachine: true)
+    .SetApplicationName("TeachersApp");
+
 // در بخش builder.Services
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -32,7 +33,8 @@ builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
+        //policy.WithOrigins(allowedOrigins)
+        policy.WithOrigins("http://94.74.170.19", "http://localhost:5173", "http://192.167.1.37")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -117,6 +119,14 @@ app.UseAuthorization();
 
 app.UseSwagger();
 app.UseSwaggerUI();
+
+// برای سرو فایل‌های استاتیک React
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+// برای پشتیبانی از React Router (هر مسیر به index.html برگرده)
+app.MapFallbackToFile("index.html");
+
 
 using (var scope = app.Services.CreateScope())
 {

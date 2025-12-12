@@ -6,7 +6,7 @@ using TeachersBack2.Models;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "admin")]
+[Authorize(Roles = "admin,centerAdmin")]
 public class ComponentFeatureController : ControllerBase
 {
     private readonly AppDbContext _db;

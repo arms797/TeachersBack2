@@ -9,10 +9,12 @@ public static class CookieHelper
         response.Cookies.Append(cookieName, jwtToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            //Secure = true,
+            Secure = false,
+            //SameSite = SameSiteMode.Strict,
+            SameSite = SameSiteMode.Lax,
             Path = "/",
-            Expires = DateTimeOffset.UtcNow.AddDays(1) // قابل تنظیم
+            Expires = DateTimeOffset.UtcNow.AddMinutes(120) // قابل تنظیم
         });
     }
 
@@ -20,8 +22,10 @@ public static class CookieHelper
     {
         response.Cookies.Delete(cookieName, new CookieOptions
         {
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            //Secure = true,
+            //SameSite = SameSiteMode.Strict,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
             Path = "/"
         });
     }
@@ -36,8 +40,8 @@ public static class CookieHelper
         response.Cookies.Append(csrfCookieName, csrfToken, new CookieOptions
         {
             HttpOnly = false, // قابل خواندن توسط JS برای ارسال در Header
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = false,
+            SameSite = SameSiteMode.Lax,
             Path = "/"
         });
     }
