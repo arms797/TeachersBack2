@@ -17,7 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<TeacherTerm> TeacherTerms { get; set; }
     public DbSet<ComponentFeature> ComponentFeatures { get; set; }
     public DbSet<Announcement> Announcements { get; set; }
-
+    public DbSet<ExamSeat> ExamSeats { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Keys & Indexes
