@@ -1,12 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TeachersBack2.Models;
+using TeachersBack2.Services;
 
 namespace TeachersBack2.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    private readonly ICurrentUserService _currentUserService;
 
+    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService currentUserService)
+        : base(options)
+    {
+        _currentUserService = currentUserService;
+    }
+
+    // نام کاربر جاری
+    public string CurrentUser { get; set; } = "System";
+
+    // DbSets
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
@@ -18,9 +29,11 @@ public class AppDbContext : DbContext
     public DbSet<ComponentFeature> ComponentFeatures { get; set; }
     public DbSet<Announcement> Announcements { get; set; }
     public DbSet<ExamSeat> ExamSeats { get; set; }
+    public DbSet<ChangeHistory> ChangeHistory { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Keys & Indexes
+        // تنظیمات کلیدها و ایندکس‌ها
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
             .IsUnique();
@@ -49,13 +62,13 @@ public class AppDbContext : DbContext
             .HasForeignKey(ur => ur.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Seed data
+        // Seed data (همان کدی که داشتی)
         var adminRole = new Role { Id = 1, Title = "admin", Description = "ادمین سایت" };
         var adminRole2 = new Role { Id = 2, Title = "centerAdmin", Description = "ادمین مرکز" };
         var adminRole3 = new Role { Id = 3, Title = "programmer", Description = "برنامه ریزی" };
         var adminRole4 = new Role { Id = 4, Title = "teacher", Description = "استاد" };
-        var center1 = new Center { CenterCode ="1", Title = "ستاد استان" };
-        var center2 = new Center { CenterCode = "6293", Title = "مركز شیراز"};
+        var center1 = new Center { CenterCode = "1", Title = "ستاد استان" };
+        var center2 = new Center { CenterCode = "6293", Title = "مركز شیراز" };
         var component = new ComponentFeature
         {
             Id = 1,
@@ -74,60 +87,140 @@ public class AppDbContext : DbContext
             Email = "admin@example.com",
             CenterCode = "1",
             Username = "admin",
-            PasswordHash = "$2a$12$BhFI37anzgtbV2200UY1DO6VR2WKEOvyuZngKhhMknmIxmND12b5C",// BCrypt.Net.BCrypt.HashPassword("Admin123"),
+            PasswordHash = "$2a$12$BhFI37anzgtbV2200UY1DO6VR2WKEOvyuZngKhhMknmIxmND12b5C",
             IsActive = true
         };
 
-        modelBuilder.Entity<Role>().HasData(adminRole);
-        modelBuilder.Entity<Role>().HasData(adminRole2);
-        modelBuilder.Entity<Role>().HasData(adminRole3);
-        modelBuilder.Entity<Role>().HasData(adminRole4);
+        modelBuilder.Entity<Role>().HasData(adminRole, adminRole2, adminRole3, adminRole4);
         modelBuilder.Entity<Center>().HasData(center1, center2);
         modelBuilder.Entity<User>().HasData(adminUser);
         modelBuilder.Entity<UserRole>().HasData(new { UserId = 1, RoleId = 1 });
         modelBuilder.Entity<ComponentFeature>().HasData(component);
-        string[,] arrCenters = new string[32, 2]
-    {
-        {"6317","مركز استهبان"},
-        {"1910","مركز اوز"},
-        {"1032","مركز آباده"},
-        {"1049","مركز بوانات"},
-        {"3974","مركز جهرم"},
-        {"4106","مركز خرامه"},
-        {"4533","مركز داراب"},
-        {"1061","مركز صفاشهر"},
-        {"3997","مركز فسا"},
-        {"6811","مركز فیروزآباد"},
-        {"9116","مركز كازرون"},
-        {"8054","مركز لامرد"},
-        {"9092","مركز نور آبادممسنی"},
-        {"2825","واحد ارسنجان"},
-        {"2848","واحد اقلید"},
-        {"2854","واحد بیضا"},
-        {"2877","واحد خاوران"},
-        {"29","واحد رستم"},
-        {"28","واحد زرقان"},
-        {"52","واحد زرین دشت"},
-        {"5764","واحد سپیدان"},
-        {"6323","واحد سروستان"},
-        {"2907","واحد فراشبند"},
-        {"5846","واحد قیروكارزین"},
-        {"5800","واحد كوار"},
-        {"2913","واحد لار"},
-        {"6300","واحد مرودشت"},
-        {"41","واحد نودان"},
-        {"4541","واحد نی ریز"},
-        {"2819","واحد آباده طشك"},
-        {"2883","واحد خنج"},
-        {"5817","واحد مهر"},
 
-    };
-        
+        string[,] arrCenters = new string[32, 2]
+        {
+            {"6317","مركز استهبان"},
+            {"1910","مركز اوز"},
+            {"1032","مركز آباده"},
+            {"1049","مركز بوانات"},
+            {"3974","مركز جهرم"},
+            {"4106","مركز خرامه"},
+            {"4533","مركز داراب"},
+            {"1061","مركز صفاشهر"},
+            {"3997","مركز فسا"},
+            {"6811","مركز فیروزآباد"},
+            {"9116","مركز كازرون"},
+            {"8054","مركز لامرد"},
+            {"9092","مركز نور آبادممسنی"},
+            {"2825","واحد ارسنجان"},
+            {"2848","واحد اقلید"},
+            {"2854","واحد بیضا"},
+            {"2877","واحد خاوران"},
+            {"29","واحد رستم"},
+            {"28","واحد زرقان"},
+            {"52","واحد زرین دشت"},
+            {"5764","واحد سپیدان"},
+            {"6323","واحد سروستان"},
+            {"2907","واحد فراشبند"},
+            {"5846","واحد قیروكارزین"},
+            {"5800","واحد كوار"},
+            {"2913","واحد لار"},
+            {"6300","واحد مرودشت"},
+            {"41","واحد نودان"},
+            {"4541","واحد نی ریز"},
+            {"2819","واحد آباده طشك"},
+            {"2883","واحد خنج"},
+            {"5817","واحد مهر"},
+        };
+
         for (int i = 0; i < 32; i++)
         {
-            var c=new Center { CenterCode = arrCenters[i,0],Title = arrCenters[i,1] };
+            var c = new Center { CenterCode = arrCenters[i, 0], Title = arrCenters[i, 1] };
             modelBuilder.Entity<Center>().HasData(c);
         }
     }
-    
+
+    // ------------------ Audit Trail ------------------
+    public override int SaveChanges()
+    {
+        CurrentUser = _currentUserService.GetCurrentUser();
+        AddAuditTrail();
+        return base.SaveChanges();
+    }
+
+    private void AddAuditTrail()
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e =>
+                (e.Entity is TeacherTerm || e.Entity is WeeklySchedule) &&
+                (e.State == EntityState.Added ||
+                 e.State == EntityState.Modified ||
+                 e.State == EntityState.Deleted));
+
+        foreach (var entry in entries)
+        {
+            var tableName = entry.Metadata.GetTableName();
+            var recordId = entry.Property("Id").CurrentValue != null
+                ? (int)entry.Property("Id").CurrentValue
+                : 0;
+
+            if (entry.State == EntityState.Added)
+            {
+                // لاگ ایجاد رکورد
+                foreach (var prop in entry.Properties)
+                {
+                    var history = new ChangeHistory
+                    {
+                        TableName = tableName,
+                        RecordId = recordId,
+                        ColumnName = prop.Metadata.Name,
+                        OldValue = null,
+                        NewValue = prop.CurrentValue?.ToString(),
+                        ChangedBy = CurrentUser,
+                        ChangedAt = DateTime.Now
+                    };
+                    ChangeHistory.Add(history);
+                }
+            }
+            else if (entry.State == EntityState.Modified)
+            {
+                // لاگ تغییر رکورد
+                foreach (var prop in entry.Properties)
+                {
+                    if (prop.IsModified)
+                    {
+                        var history = new ChangeHistory
+                        {
+                            TableName = tableName,
+                            RecordId = recordId,
+                            ColumnName = prop.Metadata.Name,
+                            OldValue = prop.OriginalValue?.ToString(),
+                            NewValue = prop.CurrentValue?.ToString(),
+                            ChangedBy = CurrentUser,
+                            ChangedAt = DateTime.Now
+                        };
+                        ChangeHistory.Add(history);
+                    }
+                }
+            }
+            else if (entry.State == EntityState.Deleted)
+            {
+                // لاگ حذف رکورد
+                foreach (var prop in entry.Properties)
+                {
+                    var history = new ChangeHistory
+                    {
+                        TableName = tableName,
+                        RecordId = recordId,
+                        ColumnName = prop.Metadata.Name,
+                        OldValue = prop.OriginalValue?.ToString(),
+                        NewValue = null,
+                        ChangedBy = CurrentUser,
+                        ChangedAt = DateTime.Now
+                    };
+                    ChangeHistory.Add(history);
+                }
+            }
+        }
+    }
 }
