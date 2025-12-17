@@ -148,79 +148,49 @@ public class AppDbContext : DbContext
         return base.SaveChanges();
     }
 
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        CurrentUser = _currentUserService.GetCurrentUser();
+        AddAuditTrail();
+        return await base.SaveChangesAsync(cancellationToken);
+    }
+
+
     private void AddAuditTrail()
     {
         var entries = ChangeTracker.Entries()
             .Where(e =>
+                !(e.Entity is ChangeHistory) &&
                 (e.Entity is TeacherTerm || e.Entity is WeeklySchedule) &&
-                (e.State == EntityState.Added ||
-                 e.State == EntityState.Modified ||
-                 e.State == EntityState.Deleted));
+                e.State == EntityState.Modified);
+
+        var histories = new List<ChangeHistory>();
 
         foreach (var entry in entries)
         {
             var tableName = entry.Metadata.GetTableName();
-            var recordId = entry.Property("Id").CurrentValue != null
-                ? (int)entry.Property("Id").CurrentValue
-                : 0;
+            var recordId = (int)(entry.Property("Id").OriginalValue ?? 0);
 
-            if (entry.State == EntityState.Added)
+            foreach (var prop in entry.Properties)
             {
-                // لاگ ایجاد رکورد
-                foreach (var prop in entry.Properties)
+                if (prop.IsModified)
                 {
-                    var history = new ChangeHistory
-                    {
-                        TableName = tableName,
-                        RecordId = recordId,
-                        ColumnName = prop.Metadata.Name,
-                        OldValue = null,
-                        NewValue = prop.CurrentValue?.ToString(),
-                        ChangedBy = CurrentUser,
-                        ChangedAt = DateTime.Now
-                    };
-                    ChangeHistory.Add(history);
-                }
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                // لاگ تغییر رکورد
-                foreach (var prop in entry.Properties)
-                {
-                    if (prop.IsModified)
-                    {
-                        var history = new ChangeHistory
-                        {
-                            TableName = tableName,
-                            RecordId = recordId,
-                            ColumnName = prop.Metadata.Name,
-                            OldValue = prop.OriginalValue?.ToString(),
-                            NewValue = prop.CurrentValue?.ToString(),
-                            ChangedBy = CurrentUser,
-                            ChangedAt = DateTime.Now
-                        };
-                        ChangeHistory.Add(history);
-                    }
-                }
-            }
-            else if (entry.State == EntityState.Deleted)
-            {
-                // لاگ حذف رکورد
-                foreach (var prop in entry.Properties)
-                {
-                    var history = new ChangeHistory
+                    histories.Add(new ChangeHistory
                     {
                         TableName = tableName,
                         RecordId = recordId,
                         ColumnName = prop.Metadata.Name,
                         OldValue = prop.OriginalValue?.ToString(),
-                        NewValue = null,
+                        NewValue = prop.CurrentValue?.ToString(),
                         ChangedBy = CurrentUser,
-                        ChangedAt = DateTime.Now
-                    };
-                    ChangeHistory.Add(history);
+                        ChangedAt = DateTime.UtcNow
+                    });
                 }
             }
         }
+
+        if (histories.Any())
+            ChangeHistory.AddRange(histories);
     }
+
 }
