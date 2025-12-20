@@ -493,4 +493,63 @@ public class TeacherController : ControllerBase
         }
     }
 
+    [Authorize(Roles = "admin,centerAdmin,teacher")]
+    [HttpGet("teachersEmail/{code}")]
+    [Authorize]
+    public async Task<IActionResult>GetEmail(string code)
+    {
+        try
+        {
+            var email=await _context.Teachers
+                .Where(x=>x.Code == code)
+                .Select(x=> new {x.Email}).FirstOrDefaultAsync();
+            return Ok(email);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "خطا در دریافت اطلاعات", error = ex.Message });
+        }
+    }
+    
+        // PUT: api/Teacher/updateEmail/5
+        [HttpPut("updateEmail/{code}")]
+        public async Task<IActionResult> UpdateEmail(string code, [FromBody] UpdateEmailDto dto)
+        {
+        try
+        {
+
+        
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest("ایمیل نمی‌تواند خالی باشد.");
+
+            // ولیدیشن ساده فرمت ایمیل
+            var emailRegex = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.Email, emailRegex))
+                return BadRequest("فرمت ایمیل معتبر نیست.");
+
+            var teacher = await _context.Teachers.Where(x=>x.Code==code).FirstOrDefaultAsync();
+            if (teacher == null)
+                return NotFound("استاد یافت نشد.");
+
+            teacher.Email = dto.Email;
+            _context.Teachers.Update(teacher);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "ایمیل با موفقیت به‌روزرسانی شد.", email = teacher.Email });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "خطا در ثبت اطلاعات", error = ex.Message });
+        }
+    }
+    
+
+    // DTO برای دریافت ایمیل
+    public class UpdateEmailDto
+    {
+        public string Email { get; set; }
+    }
+
+
+
 }
