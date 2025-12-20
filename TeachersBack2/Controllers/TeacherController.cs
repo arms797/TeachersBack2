@@ -493,9 +493,9 @@ public class TeacherController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "admin,centerAdmin,teacher")]
+    
     [HttpGet("teachersEmail/{code}")]
-    [Authorize]
+    [Authorize(Roles = "admin,centerAdmin,teacher")]
     public async Task<IActionResult>GetEmail(string code)
     {
         try
@@ -511,11 +511,12 @@ public class TeacherController : ControllerBase
         }
     }
     
-        // PUT: api/Teacher/updateEmail/5
-        [HttpPut("updateEmail/{code}")]
-        public async Task<IActionResult> UpdateEmail(string code, [FromBody] UpdateEmailDto dto)
-        {
-        try
+    // PUT: api/Teacher/updateEmail/5
+    [HttpPut("updateEmail/{code}")]
+    [Authorize(Roles = "admin,centerAdmin,teacher")]
+    public async Task<IActionResult> UpdateEmail(string code, [FromBody] UpdateEmailDto dto)
+    {
+    try
         {
 
         
@@ -542,14 +543,49 @@ public class TeacherController : ControllerBase
             return BadRequest(new { message = "خطا در ثبت اطلاعات", error = ex.Message });
         }
     }
-    
 
+    [HttpGet("normalize")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> NormalizeTeachers()
+    {
+        try
+        {
+            var teachers = await _context.Teachers.ToListAsync();
+
+            foreach (var t in teachers)
+            {
+                t.Fname = NormalizePersian(t.Fname);
+                t.Lname = NormalizePersian(t.Lname);
+                t.FieldOfStudy = NormalizePersian(t.FieldOfStudy);
+                t.AcademicRank = NormalizePersian(t.AcademicRank);
+                t.ExecutivePosition = NormalizePersian(t.ExecutivePosition);
+                t.CooperationType = NormalizePersian(t.CooperationType);
+            }
+
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+
+    }
+
+    public static string NormalizePersian(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return input;
+
+        return input
+            .Replace('ي', 'ی')  // ی عربی → ی فارسی
+            .Replace('ك', 'ک');  // ک عربی → ک فارسی
+                                 //.Replace('د', 'د')  // اگر تفاوت یونیکد داشت
+                                 //.Replace('و', 'و'); // اگر تفاوت یونیکد داشت
+    }
     // DTO برای دریافت ایمیل
     public class UpdateEmailDto
     {
         public string Email { get; set; }
     }
-
-
 
 }
