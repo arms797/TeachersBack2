@@ -15,7 +15,7 @@
         public string Description { get; set; } // توضیحات
         public string AlternativeHours { get; set; } // ساعات جایگزین
         public string ForbiddenHours { get; set; } // ساعات ممنوع
-        public string Term {  get; set; } // ترم تحصیلی
+        public string Term {  get; set; } // ترم تحصیلی        
     }
 
 }

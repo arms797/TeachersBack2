@@ -159,13 +159,13 @@ namespace TeachersBack2.Controllers
                 // تغییرات مرتبط در ChangeHistory (به جز تغییرات admin)
                 var changes = await _context.ChangeHistory
                     .Where(ch => ch.TableName == "WeeklySchedules"
-                                 && scheduleIds.Contains(ch.RecordId)
-                                 && ch.ChangedBy != "admin")
+                                 && scheduleIds.Contains(ch.RecordId))
                     .OrderByDescending(ch => ch.ChangedAt) // فقط بر اساس زمان تغییرات مرتب شود
                     .Select(ch => new
                     {
                         ch.Id,
                         ch.RecordId,
+                        ch.DayOfWeek,
                         ch.ColumnName,
                         ch.OldValue,
                         ch.NewValue,

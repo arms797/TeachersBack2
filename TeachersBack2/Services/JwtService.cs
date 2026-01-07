@@ -10,7 +10,8 @@ public class JwtService
     private readonly IConfiguration _config;
     public JwtService(IConfiguration config) => _config = config;
 
-    public string GenerateToken(int userId, string username, IEnumerable<string> roles)
+    public string GenerateToken(int userId, string username, IEnumerable<string> roles,
+        string Fname,string Lname,string Center)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -20,7 +21,10 @@ public class JwtService
             //new Claim(ClaimTypes.NameIdentifier, userId.ToString()), // اضافه شد
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(ClaimTypes.Name, username),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            //Added claims
+            new Claim("FullName",Fname+" "+Lname),
+            new Claim("CenterCode",Center)
         };
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 

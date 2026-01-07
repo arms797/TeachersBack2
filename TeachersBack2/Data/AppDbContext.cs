@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<Announcement> Announcements { get; set; }
     public DbSet<ExamSeat> ExamSeats { get; set; }
     public DbSet<ChangeHistory> ChangeHistory { get; set; }
+    public DbSet<ScheduleLock> ScheduleLocks { get; set; }  
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -170,6 +171,8 @@ public class AppDbContext : DbContext
         {
             var tableName = entry.Metadata.GetTableName();
             var recordId = (int)(entry.Property("Id").OriginalValue ?? 0);
+            // اگر موجودیت WeeklySchedule بود، DayOfWeek را از آن بخوان
+            string dayOfWeek = entry.Entity is WeeklySchedule ws ? ws.DayOfWeek : string.Empty;
 
             foreach (var prop in entry.Properties)
             {
@@ -179,6 +182,7 @@ public class AppDbContext : DbContext
                     {
                         TableName = tableName,
                         RecordId = recordId,
+                        DayOfWeek = dayOfWeek, // اینجا مقداردهی شد
                         ColumnName = prop.Metadata.Name,
                         OldValue = prop.OriginalValue?.ToString(),
                         NewValue = prop.CurrentValue?.ToString(),

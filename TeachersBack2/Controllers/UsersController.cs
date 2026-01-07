@@ -93,6 +93,9 @@ public class UsersController : ControllerBase
             var isuser=await _db.Users.FirstOrDefaultAsync(x=>x.NationalCode==dto.NationalCode);
             if (isuser != null)
                 return BadRequest("کد ملی تکراری است");
+            var repUsername=await _db.Users.FirstOrDefaultAsync(u=>u.Username==dto.Username);
+            if (repUsername != null)
+                return BadRequest("نام کاربری تکراریست");
             if (dto.Password != null)
                 pass = BCrypt.Net.BCrypt.HashPassword(dto.Password);
             else

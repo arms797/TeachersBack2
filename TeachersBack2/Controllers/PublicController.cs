@@ -19,7 +19,8 @@ namespace TeachersBack2.Controllers
         }
 
         [HttpGet("allTeachersSummary")]
-        [AllowAnonymous] // دسترسی عمومی
+        //[AllowAnonymous] // دسترسی عمومی
+        [Authorize(Roles ="admin,centerAdmin")]
         public async Task<IActionResult> GetActiveTermTeachers()
         {
             try

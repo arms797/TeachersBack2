@@ -45,7 +45,8 @@ public class AuthController : ControllerBase
                     return Unauthorized(new { message = "نام کاربری یا رمز عبور اشتباه است." });
                 //var fullName = teacher.Fname + teacher.Lname;
 
-                var token = _jwt.GenerateToken(teacher.Id, teacher.Code, new List<string> { "teacher" });
+                var token = _jwt.GenerateToken(teacher.Id, teacher.Code, new List<string> { "teacher" }
+                    ,teacher.Fname,teacher.Lname,teacher.Center);
 
                 // Set HttpOnly auth cookie
                 var cookieName = _config["Jwt:CookieName"]!;
@@ -70,7 +71,8 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "نام کاربری یا رمز عبور اشتباه است." });
 
             var roles = user.UserRoles.Select(ur => ur.Role.Title).ToList();
-            var tokenUser = _jwt.GenerateToken(user.Id, user.Username, roles);
+            var tokenUser = _jwt.GenerateToken(user.Id, user.Username, roles,
+                user.FirstName,user.LastName,user.CenterCode);
 
             var cookieNameUser = _config["Jwt:CookieName"]!;
             CookieHelper.SetAuthCookie(Response, cookieNameUser, tokenUser);
@@ -180,22 +182,29 @@ public class AuthController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = User.Identity.Name;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+            var username = User.Identity?.Name
+                           ?? User.FindFirst(ClaimTypes.Name)?.Value;
+
             var roles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var fullName = User.FindFirst("FullName")?.Value;
+            var centerCode = User.FindFirst("CenterCode")?.Value;
 
             return Ok(new
             {
                 id = userId,
                 username = username,
-                roles = roles
+                roles = roles,
+                fullName = fullName,
+                centerCode = centerCode
             });
         }
         catch (Exception ex)
         {
             return BadRequest(ex.Message);
         }
-        
     }
-
 }
