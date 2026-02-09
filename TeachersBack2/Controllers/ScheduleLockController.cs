@@ -73,58 +73,79 @@ namespace TeachersBack2.Controllers
             }
         }
 
-        // ------------------ قفل‌گذاری گروهی بر اساس نوع همکاری ------------------
+        // ------------------ قفل‌گذاری گروهی بر اساس نوع همکاری (نسخه بهینه) ------------------
         [HttpPost("lock-by-cooperation")]
         public async Task<IActionResult> LockByCooperation([FromBody] LockByCooperationRequest req)
         {
             try
             {
+                // اعتبارسنجی ورودی
                 if (string.IsNullOrEmpty(req.Term))
                     return BadRequest(new { message = "ترم الزامی است" });
 
-                // اگر نوع همکاری = همه اساتید بود → بدون فیلتر
-                IQueryable<Teacher> query = _context.Teachers;
+                // 1. دریافت اساتید بر اساس نوع همکاری
+                IQueryable<Teacher> teachersQuery = _context.Teachers;
 
                 if (!string.IsNullOrEmpty(req.CooperationType) && req.CooperationType != "همه اساتید")
                 {
-                    query = query.Where(t => t.CooperationType == req.CooperationType);
+                    teachersQuery = teachersQuery.Where(t => t.CooperationType == req.CooperationType);
                 }
 
-                var teachers = await query.ToListAsync();
+                var teacherCodes = await teachersQuery
+                    .Select(t => t.Code)
+                    .ToListAsync();
 
-                if (teachers.Count == 0)
+                if (!teacherCodes.Any())
                     return NotFound(new { message = "هیچ استادی یافت نشد" });
 
-                var days = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه" };
+                // 2. حذف رکوردهای موجود برای این اساتید در ترم مورد نظر
+                await _context.ScheduleLocks
+                    .Where(lockRecord => teacherCodes.Contains(lockRecord.TeacherCode)
+                                      && lockRecord.Term == req.Term)
+                    .ExecuteDeleteAsync();
 
-                var locks = new List<ScheduleLock>();
+                // 3. ایجاد رکوردهای جدید برای همه روزهای هفته
+                var daysOfWeek = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه" };
+                var now = DateTime.UtcNow;
+                var newLocks = new List<ScheduleLock>();
 
-                foreach (var teacher in teachers)
+                foreach (var teacherCode in teacherCodes)
                 {
-                    foreach (var day in days)
+                    foreach (var day in daysOfWeek)
                     {
-                        locks.Add(new ScheduleLock
+                        newLocks.Add(new ScheduleLock
                         {
                             Username = req.Username,
                             FullName = req.FullName,
                             CenterCode = req.CenterCode,
-                            TeacherCode = teacher.Code,
+                            TeacherCode = teacherCode,
                             DayOfWeek = day,
                             Term = req.Term,
                             Description = req.Description,
-                            LockedAt = DateTime.UtcNow
+                            LockedAt = now
                         });
                     }
                 }
 
-                await _context.ScheduleLocks.AddRangeAsync(locks);
+                // 4. ذخیره دسته‌ای
+                await _context.ScheduleLocks.AddRangeAsync(newLocks);
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "قفل‌گذاری گروهی انجام شد", count = locks.Count });
+                return Ok(new
+                {
+                    message = "قفل‌گذاری گروهی انجام شد",
+                    count = newLocks.Count,
+                    teachersCount = teacherCodes.Count,
+                    term = req.Term
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = "خطا در قفل‌گذاری گروهی", error = ex.Message });
+                return StatusCode(500, new
+                {
+                    message = "خطا در قفل‌گذاری گروهی",
+                    error = ex.Message
+                });
             }
         }
 

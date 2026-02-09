@@ -16,6 +16,7 @@
         // جزئیات قفل
         public DateTime LockedAt { get; set; } = DateTime.UtcNow; // تاریخ و ساعت قفل کردن
         public string? Description { get; set; } // توضیحات
+        // ترم قفل گذاری
         public string Term  { get; set; }  
     }
 }
