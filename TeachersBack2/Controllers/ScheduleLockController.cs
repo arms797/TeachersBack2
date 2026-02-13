@@ -17,15 +17,16 @@ namespace TeachersBack2.Controllers
         }
 
         // ------------------ خواندن ------------------
-        [HttpGet("{term}/{teacherCode?}")]
-        public async Task<IActionResult> GetLocks(string term, string? teacherCode)
+        [HttpGet("{term}/{teacherCode}")]
+        public async Task<IActionResult> GetLocks(string term, string teacherCode)
         {
             try
             {
-                IQueryable<ScheduleLock> query = _context.ScheduleLocks.Where(l => l.Term == term);
+                IQueryable<ScheduleLock> query = _context.ScheduleLocks.Where(
+                    l => l.Term == term && l.TeacherCode==teacherCode);
 
-                if (!string.IsNullOrEmpty(teacherCode))
-                    query = query.Where(l => l.TeacherCode == teacherCode);
+               /* if (!string.IsNullOrEmpty(teacherCode))
+                    query = query.Where(l => l.TeacherCode == teacherCode);*/
 
                 var result = await query.ToListAsync();
                 return Ok(result);
@@ -105,7 +106,7 @@ namespace TeachersBack2.Controllers
                     .ExecuteDeleteAsync();
 
                 // 3. ایجاد رکوردهای جدید برای همه روزهای هفته
-                var daysOfWeek = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه" };
+                var daysOfWeek = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه شنبه", "چهارشنبه", "پنجشنبه", "جمعه" };
                 var now = DateTime.UtcNow;
                 var newLocks = new List<ScheduleLock>();
 
@@ -149,7 +150,6 @@ namespace TeachersBack2.Controllers
             }
         }
 
-
         [HttpPost("unlock-by-cooperation")]
         public async Task<IActionResult> UnlockByCooperation([FromBody] UnlockByCooperationRequest req)
         {
@@ -190,8 +190,6 @@ namespace TeachersBack2.Controllers
                 return BadRequest(new { message = "خطا در حذف گروهی قفل‌ها", error = ex.Message });
             }
         }
-
-
 
         public class LockByCooperationRequest
         {

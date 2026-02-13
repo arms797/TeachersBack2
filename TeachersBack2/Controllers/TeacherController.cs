@@ -442,7 +442,7 @@ public class TeacherController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-
+    //برنامه ترمی استاد
     [HttpGet("teacherTermSchedule/{code}/{term}")]
     [Authorize]
     public async Task<IActionResult> GetTeacherProfile(string code, string term)
