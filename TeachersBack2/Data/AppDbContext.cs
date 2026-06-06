@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using TeachersBack2.Data.Configurations;
 using TeachersBack2.Models;
 using TeachersBack2.Services;
 
@@ -64,6 +65,10 @@ public class AppDbContext : DbContext
             .WithMany(r => r.UserRoles)
             .HasForeignKey(ur => ur.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // اضافه کردن کانفیگ Exam
+        modelBuilder.ApplyConfiguration(new ExamConfiguration());
+
 
         // Seed data (همان کدی که داشتی)
         var adminRole = new Role { Id = 1, Title = "admin", Description = "ادمین سایت" };

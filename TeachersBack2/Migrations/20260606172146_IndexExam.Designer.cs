@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TeachersBack2.Data;
 
@@ -11,9 +12,11 @@ using TeachersBack2.Data;
 namespace TeachersBack2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260606172146_IndexExam")]
+    partial class IndexExam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -473,9 +476,6 @@ namespace TeachersBack2.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Center")
-                        .HasDatabaseName("IX_Exams_Center");
-
                     b.HasIndex("CenterCode")
                         .HasDatabaseName("IX_Exams_CenterCode");
 
@@ -488,8 +488,8 @@ namespace TeachersBack2.Migrations
                     b.HasIndex("ExamType")
                         .HasDatabaseName("IX_Exams_ExamType");
 
-                    b.HasIndex("LessonNoGrp")
-                        .HasDatabaseName("IX_Exams_LessonNoGrp");
+                    b.HasIndex("LessonNo")
+                        .HasDatabaseName("IX_Exams_LessonNo");
 
                     b.HasIndex("QuestionDesigner")
                         .HasDatabaseName("IX_Exams_QuestionDesigner");

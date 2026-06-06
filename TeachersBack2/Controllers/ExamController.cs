@@ -528,82 +528,99 @@ namespace TeachersBack2.Controllers
         [HttpGet("paged")]
         public async Task<IActionResult> GetPaged(
             int page = 1,
-            int pageSize = 30,
+            int pageSize = 50,
             string search = "",
             string centerCode = "",
             string teacherCode = "",
             string lessonNo = "",
             string examDate = "",
             string examType = "",
-            string questionDesigner="",
-            string sourceNo="",
-            string dayOfWeek=""
-            )
+            string questionDesigner = "",
+            string sourceNo = "",
+            string dayOfWeek = "",
+            bool hidePastDates = false  // پارامتر جدید
+        )
         {
             try
             {
                 var query = _context.Exams.AsQueryable();
 
-                // فیلتر جستجو (کد مرکز، نام استاد، نام درس، کد درس)
+                // فیلتر جستجو (فقط کد استاد یا نام استاد)
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     query = query.Where(e =>
-                        e.CenterCode.Contains(search) ||
-                        e.Teacher.Contains(search) ||
-                        e.Lesson.Contains(search) ||
-                        e.LessonNo.Contains(search)
+                        e.TeacherCode.Contains(search) ||
+                        e.Teacher.Contains(search)
                     );
                 }
 
-                // فیلتر بر اساس کد مرکز
+                // فیلتر بر اساس مرکز (کد مرکز یا نام مرکز)
                 if (!string.IsNullOrWhiteSpace(centerCode))
                 {
-                    query = query.Where(e => e.CenterCode == centerCode);
+                    query = query.Where(e =>
+                        e.CenterCode.Contains(centerCode) ||
+                        e.Center.Contains(centerCode)
+                    );
                 }
 
                 // فیلتر بر اساس کد استاد
                 if (!string.IsNullOrWhiteSpace(teacherCode))
                 {
-                    query = query.Where(e => e.TeacherCode == teacherCode);
+                    query = query.Where(e => e.TeacherCode.Contains(teacherCode));
                 }
 
                 // فیلتر بر اساس کد درس
                 if (!string.IsNullOrWhiteSpace(lessonNo))
                 {
-                    query = query.Where(e => e.LessonNo == lessonNo);
+                    query = query.Where(e => e.LessonNoGrp.Contains(lessonNo));
                 }
 
                 // فیلتر بر اساس تاریخ امتحان
                 if (!string.IsNullOrWhiteSpace(examDate))
                 {
-                    query = query.Where(e => e.ExamDate == examDate);
+                    query = query.Where(e => e.ExamDate.Contains(examDate));
                 }
 
                 // فیلتر بر اساس نوع امتحان
                 if (!string.IsNullOrWhiteSpace(examType))
                 {
-                    query = query.Where(e => e.ExamType == examType);
+                    query = query.Where(e => e.ExamType.Contains(examType));
                 }
+
                 // فیلتر بر اساس طراح سوال
                 if (!string.IsNullOrWhiteSpace(questionDesigner))
                 {
-                    query = query.Where(e => e.QuestionDesigner == questionDesigner);
+                    query = query.Where(e => e.QuestionDesigner.Contains(questionDesigner));
                 }
+
                 // فیلتر بر اساس شماره منبع
                 if (!string.IsNullOrWhiteSpace(sourceNo))
                 {
-                    query = query.Where(e => e.SourceNo == sourceNo);
+                    query = query.Where(e => e.SourceNo.Contains(sourceNo));
                 }
+
                 // فیلتر بر اساس روز هفته
                 if (!string.IsNullOrWhiteSpace(dayOfWeek))
                 {
-                    query = query.Where(e => e.DayOfWeek == dayOfWeek);
+                    query = query.Where(e => e.DayOfWeek.Contains(dayOfWeek));
+                }
+
+                // ✅ فیلتر عدم نمایش تاریخ‌های گذشته
+                if (hidePastDates)
+                {
+                    var today = DateTime.Now.ToString("yyyy/MM/dd");
+                    query = query.Where(e =>
+                        e.ExamDate != null &&
+                        string.Compare(e.ExamDate, today) >= 0
+                    );
                 }
 
                 var totalCount = await query.CountAsync();
 
+                // مرتب‌سازی: تاریخ‌های معتبر اول، سپس بر اساس تاریخ و ساعت
                 var items = await query
-                    .OrderBy(e => e.ExamDate)
+                    .OrderByDescending(e => e.ExamDate != null && e.ExamDate.Length >= 8)
+                    .ThenBy(e => e.ExamDate)
                     .ThenBy(e => e.Start)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
@@ -788,70 +805,50 @@ namespace TeachersBack2.Controllers
         // ================================
         // 8. حذف گروهی امتحانات (اختیاری)
         // ================================
-        [HttpDelete("bulk-delete")]
+        [HttpDelete("truncate")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> BulkDelete([FromBody] List<int> ids)
+        public async Task<IActionResult> TruncateExams()
         {
             try
             {
-                if (ids == null || !ids.Any())
-                    return BadRequest(new { message = "لیست شناسه‌ها خالی است" });
+                // اجرای دستور TRUNCATE TABLE
+                await _context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE Exams");
 
-                var exams = await _context.Exams.Where(e => ids.Contains(e.Id)).ToListAsync();
-
-                if (!exams.Any())
-                    return NotFound(new { message = "هیچ امتحانی یافت نشد" });
-
-                _context.Exams.RemoveRange(exams);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = $"{exams.Count} امتحان با موفقیت حذف شد" });
+                return Ok(new { message = "تمامی رکوردهای امتحانات با موفقیت حذف شدند و شمارنده Identity بازنشانی گردید" });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "خطا در حذف گروهی امتحانات", error = ex.Message });
+                return StatusCode(500, new { message = $"خطا در حذف کامل: {ex.Message}" });
             }
         }
         // ================================
-        // دریافت امتحانات طراح سوال (یکپارچه)
+        // دریافت امتحانات طراح سوال  
         // ================================
         [HttpGet("question-designer")]
         public async Task<IActionResult> GetByQuestionDesigner(
-            string designer,      // الزامی - می‌تواند نام یا کد استاد باشد
+            string designer,      // الزامی - کد استاد یا نام طراح سوال
             string examDate = "") // اختیاری - اگر وارد شود فقط آن تاریخ را نشان می‌دهد
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(designer))
-                    return BadRequest(new { message = "نام یا کد طراح سوال الزامی است" });
-
-                // تشخیص اینکه ورودی کد استاد است یا نام
-                bool isTeacherCode = designer.All(char.IsDigit) || designer.Length <= 10;
+                    return BadRequest(new { message = "کد یا نام طراح سوال الزامی است" });
 
                 IQueryable<Exam> query = _context.Exams.AsQueryable();
-                string teacherName = "";
-                string teacherCode = "";
+
+                // تشخیص اینکه ورودی کد استاد است یا نام
+                // اگر ورودی 6 کاراکتر و فقط عدد باشد => کد استاد
+                bool isTeacherCode = designer.Length == 6 && designer.All(char.IsDigit);
 
                 if (isTeacherCode)
                 {
-                    // جستجو بر اساس کد استاد
-                    teacherCode = designer;
-                    query = query.Where(e => e.QuestionDesignerCode == teacherCode);
-
-                    // دریافت نام استاد برای نمایش
-                    var teacher = await _context.Teachers
-                        .Where(t => t.Code == teacherCode)
-                        .Select(t => new { t.Fname, t.Lname })
-                        .FirstOrDefaultAsync();
-
-                    if (teacher != null)
-                        teacherName = $"{teacher.Fname} {teacher.Lname}";
+                    // جستجوی دقیق بر اساس کد استاد (QuestionDesignerCode)
+                    query = query.Where(e => e.QuestionDesignerCode == designer);
                 }
                 else
                 {
-                    // جستجو بر اساس نام طراح سوال
-                    query = query.Where(e => e.QuestionDesigner == designer);
-                    teacherName = designer;
+                    // جستجوی جزئی بر اساس نام طراح سوال (QuestionDesigner)
+                    query = query.Where(e => e.QuestionDesigner.Contains(designer));
                 }
 
                 // فیلتر بر اساس تاریخ (اگر وارد شده باشد)
@@ -869,18 +866,16 @@ namespace TeachersBack2.Controllers
                 if (!exams.Any())
                 {
                     string message = string.IsNullOrWhiteSpace(examDate)
-                        ? $"هیچ امتحانی برای طراح سوال '{teacherName}' یافت نشد"
-                        : $"هیچ امتحانی برای طراح سوال '{teacherName}' در تاریخ '{examDate}' یافت نشد";
+                        ? $"هیچ امتحانی برای طراح سوال '{designer}' یافت نشد"
+                        : $"هیچ امتحانی برای طراح سوال '{designer}' در تاریخ '{examDate}' یافت نشد";
 
                     return NotFound(new { message });
                 }
 
                 return Ok(new
                 {
-                    designerType = isTeacherCode ? "teacherCode" : "name",
-                    designerValue = designer,
-                    designerName = teacherName,
-                    designerCode = isTeacherCode ? teacherCode : "",
+                    searchValue = designer,
+                    searchType = isTeacherCode ? "teacherCode" : "name",
                     examDate = string.IsNullOrWhiteSpace(examDate) ? "همه تاریخ‌ها" : examDate,
                     count = exams.Count,
                     items = exams
@@ -889,6 +884,33 @@ namespace TeachersBack2.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "خطا در دریافت امتحانات طراح سوال", error = ex.Message });
+            }
+        }
+
+        // ================================
+        // دریافت دروسی که طراح سوال دارند ولی کد طراح سوال ندارند
+        // ================================
+        [HttpGet("missing-designer-code/simple")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> GetMissingDesignerCodeSimple()
+        {
+            try
+            {
+                var exams = await _context.Exams
+                    .Where(e => e.QuestionDesigner != "" && e.QuestionDesignerCode == "")
+                    .OrderBy(e => e.QuestionDesigner)
+                    .ThenBy(e => e.ExamDate)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    count = exams.Count,
+                    items = exams
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت اطلاعات", error = ex.Message });
             }
         }
     }
