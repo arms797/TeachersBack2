@@ -30,7 +30,9 @@ public class AppDbContext : DbContext
     public DbSet<Announcement> Announcements { get; set; }
     public DbSet<ExamSeat> ExamSeats { get; set; }
     public DbSet<ChangeHistory> ChangeHistory { get; set; }
-    public DbSet<ScheduleLock> ScheduleLocks { get; set; }  
+    public DbSet<ScheduleLock> ScheduleLocks { get; set; }
+    public DbSet<Exam> Exams { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
