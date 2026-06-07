@@ -584,13 +584,32 @@ namespace TeachersBack2.Controllers
                 // فیلتر بر اساس نوع امتحان
                 if (!string.IsNullOrWhiteSpace(examType))
                 {
-                    query = query.Where(e => e.ExamType.Contains(examType));
+                    query = query.Where(e => e.QuestionType.Contains(examType));
                 }
 
                 // فیلتر بر اساس طراح سوال
                 if (!string.IsNullOrWhiteSpace(questionDesigner))
                 {
-                    query = query.Where(e => e.QuestionDesigner.Contains(questionDesigner));
+                    var trimmedDesigner = questionDesigner.Trim();
+
+                    // تشخیص کد 6 رقمی
+                    bool isCode = trimmedDesigner.Length == 6 && trimmedDesigner.All(char.IsDigit);
+
+                    if (isCode)
+                    {
+                        // جستجوی دقیق در کد طراح سوال
+                        query = query.Where(e =>
+                            e.QuestionDesignerCode != null &&
+                            e.QuestionDesignerCode.Contains(trimmedDesigner)
+                        );
+                    }
+                    else
+                    {
+                        // جستجوی نام
+                        query = query.Where(e =>
+                            e.QuestionDesigner.Contains(trimmedDesigner)
+                        );
+                    }
                 }
 
                 // فیلتر بر اساس شماره منبع
@@ -605,13 +624,21 @@ namespace TeachersBack2.Controllers
                     query = query.Where(e => e.DayOfWeek.Contains(dayOfWeek));
                 }
 
-                // ✅ فیلتر عدم نمایش تاریخ‌های گذشته
+                // اضافه کردن using برای کلاس تبدیل تاریخ شمسی
+                // می‌توانی از NuGet Package "PersianCalendar" یا "MD.PersianDateTime" استفاده کنید.
+
                 if (hidePastDates)
                 {
-                    var today = DateTime.Now.ToString("yyyy/MM/dd");
+                    // دریافت تاریخ امروز شمسی
+                    var persianCalendar = new System.Globalization.PersianCalendar();
+                    var now = DateTime.Now;
+                    string todayShamsi = $"{persianCalendar.GetYear(now):0000}/" +
+                                         $"{persianCalendar.GetMonth(now):00}/" +
+                                         $"{persianCalendar.GetDayOfMonth(now):00}";
+
                     query = query.Where(e =>
                         e.ExamDate != null &&
-                        string.Compare(e.ExamDate, today) >= 0
+                        string.Compare(e.ExamDate, todayShamsi) >= 0
                     );
                 }
 
@@ -890,27 +917,102 @@ namespace TeachersBack2.Controllers
         // ================================
         // دریافت دروسی که طراح سوال دارند ولی کد طراح سوال ندارند
         // ================================
-        [HttpGet("missing-designer-code/simple")]
+        [HttpGet("missing-designer-code")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> GetMissingDesignerCodeSimple()
+        public async Task<IActionResult> GetMissingDesignerCode(
+             int page = 1,
+             int pageSize = 50,
+             string search = "",
+             string examDate = "")
         {
             try
             {
-                var exams = await _context.Exams
-                    .Where(e => e.QuestionDesigner != "" && e.QuestionDesignerCode == "")
+                var query = _context.Exams
+                    .Where(e => e.QuestionDesigner != "" && e.QuestionDesignerCode == "");
+
+                // فیلتر جستجو در نام طراح سوال یا نام درس
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query = query.Where(e =>
+                        e.QuestionDesigner.Contains(search) ||
+                        e.Lesson.Contains(search) ||
+                        e.LessonNoGrp.Contains(search)
+                    );
+                }
+
+                // فیلتر بر اساس تاریخ امتحان
+                if (!string.IsNullOrWhiteSpace(examDate))
+                {
+                    query = query.Where(e => e.ExamDate.Contains(examDate));
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
                     .OrderBy(e => e.QuestionDesigner)
                     .ThenBy(e => e.ExamDate)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
                 return Ok(new
                 {
-                    count = exams.Count,
-                    items = exams
+                    totalCount,
+                    page,
+                    pageSize,
+                    totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                    items
                 });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "خطا در دریافت اطلاعات", error = ex.Message });
+            }
+        }
+        // ================================
+        // اختصاص کد طراح سوال به چندین رکورد
+        // ================================
+        public class AssignDesignerCodeRequest
+        {
+            public List<int> Ids { get; set; }
+            public string DesignerCode { get; set; }
+        }
+
+        [HttpPost("assign-designer-code")]
+        [Authorize(Roles = "admin,centerAdmin")]
+        public async Task<IActionResult> AssignDesignerCode([FromBody] AssignDesignerCodeRequest request)
+        {
+            try
+            {
+                if (request.Ids == null || !request.Ids.Any())
+                    return BadRequest(new { message = "لیست شناسه‌ها خالی است" });
+
+                if (string.IsNullOrWhiteSpace(request.DesignerCode))
+                    return BadRequest(new { message = "کد طراح سوال نمی‌تواند خالی باشد" });
+
+                var exams = await _context.Exams
+                    .Where(e => request.Ids.Contains(e.Id))
+                    .ToListAsync();
+
+                if (!exams.Any())
+                    return NotFound(new { message = "هیچ امتحانی یافت نشد" });
+
+                foreach (var exam in exams)
+                {
+                    exam.QuestionDesignerCode = request.DesignerCode;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = "کد طراح سوال با موفقیت اعمال شد",
+                    updatedCount = exams.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در اعمال کد طراح سوال", error = ex.Message });
             }
         }
     }
