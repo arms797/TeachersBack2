@@ -1015,6 +1015,131 @@ namespace TeachersBack2.Controllers
                 return StatusCode(500, new { message = "خطا در اعمال کد طراح سوال", error = ex.Message });
             }
         }
+        // ================================
+        // آپلود فایل اکسل اساتید (بارگذاری دسته‌جمعی)
+        // ================================
+        [HttpPost("upload-teachers-excel")]
+        [Authorize(Roles = "admin")]
+        public async Task<IActionResult> UploadTeachersExcel(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("فایل معتبر نیست");
+
+            try
+            {
+                using var stream = new MemoryStream();
+                await file.CopyToAsync(stream);
+                stream.Position = 0;
+
+                using var workbook = new XLWorkbook(stream);
+                var worksheet = workbook.Worksheet(1);
+
+                var teachersToAdd = new List<Teacher>();
+                var existingCodes = new HashSet<string>();
+
+                // بارگذاری کدهای موجود از دیتابیس
+                var allExisting = await _context.Teachers
+                    .Select(t => t.Code)
+                    .ToListAsync();
+
+                foreach (var code in allExisting)
+                {
+                    existingCodes.Add(code);
+                }
+
+                int addedCount = 0;
+                int duplicateCount = 0;
+                int errorCount = 0;
+
+                var rows = worksheet.RowsUsed().Skip(1).ToList();
+                int totalRows = rows.Count;
+
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    try
+                    {
+                        var row = rows[i];
+
+                        // خواندن فیلدها بر اساس ترتیب ستون‌های اکسل
+                        var code = row.Cell(1).GetString().Trim();
+                        var fname = row.Cell(2).GetString().Trim();
+                        var mobile = row.Cell(3).GetString().Trim();
+                        var center = row.Cell(4).GetString().Trim();
+                        var academicRank = row.Cell(5).GetString().Trim();
+
+                        // بررسی خالی بودن ردیف
+                        if (string.IsNullOrWhiteSpace(code))
+                        {
+                            errorCount++;
+                            continue;
+                        }
+
+                        // بررسی تکراری نبودن کد استاد
+                        if (existingCodes.Contains(code))
+                        {
+                            duplicateCount++;
+                            continue;
+                        }
+
+                        // 🔥 رمزگذاری کد استاد با BCrypt
+                        string hashedPassword = BCrypt.Net.BCrypt.HashPassword(code);
+
+                        var teacher = new Teacher
+                        {
+                            Code = code,
+                            Fname = fname,
+                            Lname = "",
+                            Email = "",
+                            Mobile = mobile,
+                            FieldOfStudy = "",
+                            Center = center,
+                            CooperationType = "",
+                            AcademicRank = academicRank,
+                            ExecutivePosition = "",
+                            NationalCode = "",
+                            PasswordHash = hashedPassword  // ✅ رمز = کد استاد (هش شده)
+                        };
+
+                        teachersToAdd.Add(teacher);
+                        existingCodes.Add(code);
+                        addedCount++;
+
+                        // ذخیره دسته‌ای هر 200 رکورد
+                        if (teachersToAdd.Count >= 200)
+                        {
+                            await _context.Teachers.AddRangeAsync(teachersToAdd);
+                            await _context.SaveChangesAsync();
+                            teachersToAdd.Clear();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        errorCount++;
+                        Console.WriteLine($"خطا در ردیف {i + 2}: {ex.Message}");
+                    }
+                }
+
+                // ذخیره رکوردهای باقیمانده
+                if (teachersToAdd.Any())
+                {
+                    await _context.Teachers.AddRangeAsync(teachersToAdd);
+                    await _context.SaveChangesAsync();
+                }
+
+                return Ok(new
+                {
+                    message = "بارگذاری فایل اساتید با موفقیت انجام شد",
+                    totalRows,
+                    addedCount,
+                    duplicateCount,
+                    errorCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"خطا در پردازش فایل: {ex.Message}");
+            }
+        }
     }
 }
 
